@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { put } from '@vercel/blob';
 import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
@@ -38,24 +37,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
     const ext = file.type.split('/')[1].replace('jpeg', 'jpg');
-    const fileName = `${uuidv4()}.${ext}`;
-    const uploadDir = join(process.cwd(), 'public', 'uploads');
+    const fileName = `uploads/${uuidv4()}.${ext}`;
 
-    // Ensure uploads directory exists
-    await mkdir(uploadDir, { recursive: true });
-
-    const filePath = join(uploadDir, fileName);
-    await writeFile(filePath, buffer);
-
-    const url = `/uploads/${fileName}`;
+    const blob = await put(fileName, file, { access: 'public' });
 
     return NextResponse.json({
       data: {
-        url,
+        url: blob.url,
         name: file.name,
         size: file.size,
         type: file.type,
