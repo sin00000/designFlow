@@ -10,7 +10,7 @@ export async function PUT(req: NextRequest) {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { layout, bgColor, font } = await req.json();
+    const { layout, bgColor, font, networkPositions } = await req.json();
 
     const data: Record<string, string> = {};
 
@@ -29,6 +29,10 @@ export async function PUT(req: NextRequest) {
       const validFonts = ['default', 'nanum-myeongjo', 'mona12', 'school-safety', 'yoon-cho-woo-san', 'yangjin'];
       if (!validFonts.includes(font)) return NextResponse.json({ error: 'Invalid font' }, { status: 400 });
       data.portfolioFont = font;
+    }
+
+    if (networkPositions !== undefined) {
+      data.portfolioNetworkPositions = JSON.stringify(networkPositions);
     }
 
     await db.user.update({ where: { id: session.user.id }, data });

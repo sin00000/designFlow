@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ExternalLink, X } from 'lucide-react';
 
 interface Props {
@@ -27,74 +28,71 @@ export default function PortfolioCard({ item, colSpan, isNetwork }: Props) {
 
   // ── Network layout: circle node + title below + tap-to-expand overlay ──
   if (isNetwork) {
+    const overlay = expanded ? createPortal(
+      <>
+        <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setExpanded(false)} />
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-8"
+          onClick={() => setExpanded(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl p-5"
+            style={{ backgroundColor: '#ffffff', boxShadow: '0 -4px 40px rgba(0,0,0,0.15)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-8 h-1 rounded-full mb-4 mx-auto" style={{ backgroundColor: coverColor }} />
+            <div className="flex items-center gap-3 mb-3">
+              {hasImage ? (
+                <img src={imageUrl!} alt={item.title}
+                  className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
+                  style={{ border: `1px solid ${coverColor}30` }} />
+              ) : (
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${coverColor}55, ${coverColor}22)` }}>
+                  <span className="text-sm font-bold" style={{ color: coverColor }}>
+                    {item.title.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <p className="font-bold text-base leading-snug" style={{ color: '#111827' }}>{item.title}</p>
+            </div>
+            {item.description && (
+              <p className="text-sm leading-relaxed mb-3" style={{ color: '#6b7280' }}>{item.description}</p>
+            )}
+            {item.tags.length > 0 && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {item.tags.map((tag) => (
+                  <span key={tag} className="px-2 py-0.5 text-xs rounded-full font-medium"
+                    style={{ backgroundColor: `${coverColor}18`, color: coverColor, border: `1px solid ${coverColor}30` }}>
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+            {item.linkUrl && (
+              <a href={item.linkUrl} target="_blank" rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-600 transition-colors min-w-0">
+                <ExternalLink size={11} className="flex-shrink-0" />
+                <span className="truncate">{item.linkUrl}</span>
+              </a>
+            )}
+            <button
+              onClick={() => setExpanded(false)}
+              className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: '#f3f4f6' }}
+            >
+              <X size={12} style={{ color: '#6b7280' }} />
+            </button>
+          </div>
+        </div>
+      </>,
+      document.body,
+    ) : null;
+
     return (
       <div className="flex flex-col items-center gap-1.5">
-        {/* Fullscreen overlay */}
-        {expanded && (
-          <>
-            <div className="fixed inset-0 z-40 bg-black/60" onClick={() => setExpanded(false)} />
-            <div
-              className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-8"
-              onClick={() => setExpanded(false)}
-            >
-              <div
-                className="relative w-full max-w-sm rounded-2xl p-5"
-                style={{ backgroundColor: '#ffffff', boxShadow: '0 -4px 40px rgba(0,0,0,0.15)' }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {/* accent bar */}
-                <div className="w-8 h-1 rounded-full mb-4 mx-auto" style={{ backgroundColor: coverColor }} />
-
-                {/* title row */}
-                <div className="flex items-center gap-3 mb-3">
-                  {hasImage ? (
-                    <img src={imageUrl!} alt={item.title}
-                      className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
-                      style={{ border: `1px solid ${coverColor}30` }} />
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: `linear-gradient(135deg, ${coverColor}55, ${coverColor}22)` }}>
-                      <span className="text-sm font-bold" style={{ color: coverColor }}>
-                        {item.title.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
-                  <p className="font-bold text-base leading-snug" style={{ color: '#111827' }}>{item.title}</p>
-                </div>
-
-                {item.description && (
-                  <p className="text-sm leading-relaxed mb-3" style={{ color: '#6b7280' }}>{item.description}</p>
-                )}
-                {item.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-3">
-                    {item.tags.map((tag) => (
-                      <span key={tag} className="px-2 py-0.5 text-xs rounded-full font-medium"
-                        style={{ backgroundColor: `${coverColor}18`, color: coverColor, border: `1px solid ${coverColor}30` }}>
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {item.linkUrl && (
-                  <a href={item.linkUrl} target="_blank" rel="noopener noreferrer"
-                    onClick={(e) => e.stopPropagation()}
-                    className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-600 transition-colors min-w-0">
-                    <ExternalLink size={11} className="flex-shrink-0" />
-                    <span className="truncate">{item.linkUrl}</span>
-                  </a>
-                )}
-
-                <button
-                  onClick={() => setExpanded(false)}
-                  className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: '#f3f4f6' }}
-                >
-                  <X size={12} style={{ color: '#6b7280' }} />
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+        {overlay}
 
         {/* Circle */}
         <div

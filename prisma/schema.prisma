@@ -20,9 +20,10 @@ model User {
   bio             String?
   avatar          String?
   password        String?
-  portfolioLayout  String  @default("grid")
-  portfolioBgColor String  @default("#f9fafb")
-  portfolioFont    String  @default("default")
+  portfolioLayout           String  @default("grid")
+  portfolioBgColor          String  @default("#f9fafb")
+  portfolioFont             String  @default("default")
+  portfolioNetworkPositions String  @default("{}")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

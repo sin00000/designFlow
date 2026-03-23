@@ -436,6 +436,15 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
     setDraggingId(null);
     dragStartRef.current = null;
     setMouse({ x: 0, y: 0 });
+    // Save positions to DB after drag ends
+    setNodePositions((prev) => {
+      fetch('/api/user/portfolio-layout', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ networkPositions: prev }),
+      }).catch(() => {});
+      return prev;
+    });
   }, []);
 
   const containerH = Math.max(420, Math.ceil(items.length / 3) * 160);

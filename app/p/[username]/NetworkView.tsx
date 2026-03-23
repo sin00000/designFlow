@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import PortfolioCard from './PortfolioCard';
 
@@ -34,11 +35,22 @@ const DEPTH_FACTORS = [0.5, 1.2, 0.3, 1.5, 0.8, 1.0, 0.4, 1.3, 0.7, 1.1, 0.6, 0.
 const STRENGTH = 18;
 const CARD_W = 120;
 
-export default function NetworkView({ items, lineColor }: { items: Item[]; lineColor?: string }) {
+export default function NetworkView({
+  items,
+  lineColor,
+  savedPositions = {},
+}: {
+  items: Item[];
+  lineColor?: string;
+  savedPositions?: Record<string, { left: number; top: number }>;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
 
-  const positions = useMemo(() => items.map((_, i) => seededPos(i, items.length)), [items.length]);
+  const positions = useMemo(
+    () => items.map((item, i) => savedPositions[item.id] ?? seededPos(i, items.length)),
+    [items, savedPositions],
+  );
 
   const lines = useMemo(() => {
     if (items.length < 2) return [];

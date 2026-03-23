@@ -49,6 +49,7 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
       portfolioLayout: true,
       portfolioBgColor: true,
       portfolioFont: true,
+      portfolioNetworkPositions: true,
     },
   });
 
@@ -109,6 +110,7 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
         ) : user.portfolioLayout === 'network' ? (
           <NetworkView
             lineColor={bgColor === '#f9fafb' ? '#111827' : '#ffffff'}
+            savedPositions={(() => { try { return JSON.parse(user.portfolioNetworkPositions || '{}'); } catch { return {}; } })()}
             items={portfolioItems.map((item) => ({
               id: item.id,
               title: item.title,
