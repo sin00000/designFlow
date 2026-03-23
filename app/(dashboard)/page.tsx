@@ -363,41 +363,79 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
   const [expandedItem, setExpandedItem] = useState<Portfolio | null>(null);
+  const [nodePositions, setNodePositions] = useState<Record<string, { left: number; top: number }>>({});
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const dragStartRef = useRef<{ startX: number; startY: number; startLeft: number; startTop: number } | null>(null);
+  const hasDraggedRef = useRef(false);
+
   const depthFactors = [0.5, 1.2, 0.3, 1.5, 0.8, 1.0, 0.4, 1.3, 0.7, 1.1, 0.6, 0.9];
   const STRENGTH = 18;
   const CARD_W = 90;
 
-  const positions = useMemo(() => items.map((_, i) => seededPos(i, items.length)), [items.length]);
+  useEffect(() => {
+    setNodePositions((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      items.forEach((item, i) => {
+        if (!next[item.id]) { next[item.id] = seededPos(i, items.length); changed = true; }
+      });
+      return changed ? next : prev;
+    });
+  }, [items.map((i) => i.id).join(',')]);
 
-  // Lines computed from percentage positions — no DOM measurement needed
+  const positions = useMemo(
+    () => items.map((item, i) => nodePositions[item.id] ?? seededPos(i, items.length)),
+    [items, nodePositions],
+  );
+
   const lines = useMemo(() => {
     if (items.length < 2) return [];
     const result: { x1: number; y1: number; x2: number; y2: number }[] = [];
     const connected = new Set<string>();
     positions.forEach((c, i) => {
-      const dists = positions
+      positions
         .map((n, j) => ({ j, d: j !== i ? Math.hypot(n.left - c.left, n.top - c.top) : Infinity }))
-        .sort((a, b) => a.d - b.d)
-        .slice(0, 2);
-      dists.forEach(({ j }) => {
-        if (j === i || j >= positions.length) return;
-        const key = [Math.min(i, j), Math.max(i, j)].join('-');
-        if (!connected.has(key)) {
-          connected.add(key);
-          result.push({ x1: c.left, y1: c.top, x2: positions[j].left, y2: positions[j].top });
-        }
-      });
+        .sort((a, b) => a.d - b.d).slice(0, 2)
+        .forEach(({ j }) => {
+          if (j === i || j >= positions.length) return;
+          const key = [Math.min(i, j), Math.max(i, j)].join('-');
+          if (!connected.has(key)) { connected.add(key); result.push({ x1: c.left, y1: c.top, x2: positions[j].left, y2: positions[j].top }); }
+        });
     });
     return result;
   }, [positions]);
 
-  const getRelative = useCallback((clientX: number, clientY: number) => {
+  const handleNodePointerDown = useCallback((e: React.PointerEvent, item: Portfolio, pos: { left: number; top: number }) => {
+    e.stopPropagation();
+    containerRef.current?.setPointerCapture(e.pointerId);
+    hasDraggedRef.current = false;
+    setDraggingId(item.id);
+    dragStartRef.current = { startX: e.clientX, startY: e.clientY, startLeft: pos.left, startTop: pos.top };
+  }, []);
+
+  const handleContainerPointerMove = useCallback((e: React.PointerEvent) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setMouse({
-      x: (clientX - rect.left) / rect.width  - 0.5,
-      y: (clientY - rect.top)  / rect.height - 0.5,
-    });
+    if (draggingId && dragStartRef.current) {
+      const dx = (e.clientX - dragStartRef.current.startX) / rect.width * 100;
+      const dy = (e.clientY - dragStartRef.current.startY) / rect.height * 100;
+      if (Math.hypot(dx, dy) > 0.8) hasDraggedRef.current = true;
+      setNodePositions((prev) => ({
+        ...prev,
+        [draggingId]: {
+          left: Math.max(5, Math.min(95, dragStartRef.current!.startLeft + dx)),
+          top:  Math.max(5, Math.min(95, dragStartRef.current!.startTop  + dy)),
+        },
+      }));
+    } else {
+      setMouse({ x: (e.clientX - rect.left) / rect.width - 0.5, y: (e.clientY - rect.top) / rect.height - 0.5 });
+    }
+  }, [draggingId]);
+
+  const handlePointerUp = useCallback(() => {
+    setDraggingId(null);
+    dragStartRef.current = null;
+    setMouse({ x: 0, y: 0 });
   }, []);
 
   const containerH = Math.max(420, Math.ceil(items.length / 3) * 160);
@@ -405,29 +443,25 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
   return (
     <div
       ref={containerRef}
-      onMouseMove={(e) => getRelative(e.clientX, e.clientY)}
-      onMouseLeave={() => setMouse({ x: 0, y: 0 })}
-      onTouchMove={(e) => { const t = e.touches[0]; if (t) getRelative(t.clientX, t.clientY); }}
-      onTouchEnd={() => setMouse({ x: 0, y: 0 })}
-      className="relative w-full"
-      style={{ height: containerH }}
+      onPointerMove={handleContainerPointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
+      onPointerLeave={() => { if (!draggingId) setMouse({ x: 0, y: 0 }); }}
+      className="relative w-full select-none"
+      style={{ height: containerH, touchAction: 'none' }}
     >
-      {/* SVG connecting lines — percentage coordinates match item positions */}
-      <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%"
-        style={{ zIndex: 0 }}>
+      <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%" style={{ zIndex: 0 }}>
         {lines.map((l, i) => (
-          <line key={i}
-            x1={`${l.x1}%`} y1={`${l.y1}%`}
-            x2={`${l.x2}%`} y2={`${l.y2}%`}
+          <line key={i} x1={`${l.x1}%`} y1={`${l.y1}%`} x2={`${l.x2}%`} y2={`${l.y2}%`}
             stroke="white" strokeWidth="2" opacity="0.7" />
         ))}
       </svg>
-      {/* Network overlay — rendered here, outside transform context */}
+
       <AnimatePresence>
         {expandedItem && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-8"
-            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            style={{ backgroundColor: 'rgba(0,0,0,0.82)' }}
             onClick={() => setExpandedItem(null)}>
             <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: 'spring', damping: 24, stiffness: 260 }}
@@ -464,25 +498,32 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
         )}
       </AnimatePresence>
 
-      {/* Items */}
       {items.map((item, i) => {
         const depth = depthFactors[i % depthFactors.length];
-        const tx = mouse.x * depth * STRENGTH;
-        const ty = mouse.y * depth * STRENGTH;
         const pos = positions[i];
+        const isDragging = draggingId === item.id;
         return (
           <motion.div
             key={item.id}
-            animate={{ x: tx, y: ty }}
+            animate={{ x: isDragging ? 0 : mouse.x * depth * STRENGTH, y: isDragging ? 0 : mouse.y * depth * STRENGTH }}
             transition={{ type: 'spring', damping: 28, stiffness: 180 }}
             style={{
               position: 'absolute',
               left: `${pos.left}%`,
               top:  `${pos.top}%`,
               width: CARD_W,
-              zIndex: 1,
+              zIndex: isDragging ? 10 : 1,
               translateX: '-50%',
               translateY: '-50%',
+              cursor: isDragging ? 'grabbing' : 'grab',
+            }}
+            onPointerDown={(e) => handleNodePointerDown(e, item, pos)}
+            onClickCapture={(e) => {
+              if (hasDraggedRef.current) {
+                e.stopPropagation();
+                e.preventDefault();
+                hasDraggedRef.current = false;
+              }
             }}
           >
             <PortfolioItemCard item={item} template="network"
