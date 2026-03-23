@@ -3,7 +3,18 @@
     "allow": [
       "Bash(find /Users/kimseojin/Desktop/dr_wep -maxdepth 3 -not -path */node_modules/* -type d)",
       "Bash(find /Users/kimseojin/Desktop/dr_wep -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js \\\\\\) ! -path */node_modules/* ! -path */.next/*)",
-      "Bash(find /Users/kimseojin/Desktop/dr_wep/components -type f -name *.tsx ! -path */node_modules/*)"
+      "Bash(find /Users/kimseojin/Desktop/dr_wep/components -type f -name *.tsx ! -path */node_modules/*)",
+      "Bash(ls /Users/kimseojin/Desktop/dr_wep/.env*)",
+      "Bash(find /Users/kimseojin/Desktop/dr_wep -type f \\\\\\( -name \"*.ts\" -o -name \"*.tsx\" \\\\\\) -path \"*/app/\\(dashboard\\)/*\")",
+      "Bash(grep -rn \"indigo\\\\|violet\\\\|6366f1\\\\|8b5cf6\\\\|a855f7\\\\|99, 102, 241\" /Users/kimseojin/Desktop/dr_wep/app /Users/kimseojin/Desktop/dr_wep/components /Users/kimseojin/Desktop/dr_wep/tailwind.config.ts --include=*.ts --include=*.tsx --include=*.css)",
+      "Bash(grep -rn \"indigo\\\\|violet\\\\|6366f1\\\\|8b5cf6\\\\|a855f7\\\\|99, 102, 241\" /Users/kimseojin/Desktop/dr_wep/app /Users/kimseojin/Desktop/dr_wep/components --include=*.ts --include=*.tsx --include=*.css)",
+      "Bash(node -e \"require\\(''resend''\\)\")",
+      "Bash(ls /Users/kimseojin/Desktop/dr_wep/postcss.config*)",
+      "Bash(grep -r \"portfolio-layout\\\\|LayoutSwitcher\\\\|LayoutPicker\\\\|layoutType\\\\|layoutMode\" /Users/kimseojin/Desktop/dr_wep/app --include=*.tsx --include=*.ts)",
+      "Bash(grep -r \"coverColor\\\\|ColorPicker\\\\|color.*input\\\\|theme.*color\" /Users/kimseojin/Desktop/dr_wep/app --include=*.tsx --include=*.ts)",
+      "Bash(find /Users/kimseojin/Desktop/dr_wep -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\) ! -path */node_modules/* ! -path */.next/*)",
+      "Bash(grep -r \"ACCENT_COLORS\\\\|applyAccent\\\\|ThemeProvider\" /Users/kimseojin/Desktop/dr_wep/app --include=*.tsx --include=*.ts)",
+      "Bash(cat /Users/kimseojin/Desktop/dr_wep/app/api/projects/[id]/work-images/route.ts)"
     ]
   }
 }

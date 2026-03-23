@@ -21,6 +21,7 @@ import ImageUpload from '@/components/ui/ImageUpload';
 import useToast from '@/lib/hooks/use-toast';
 import { parseTagsInput } from '@/lib/utils';
 import type { Reference, Project } from '@/types';
+import { useT } from '@/lib/i18n';
 
 interface AddReferenceForm {
   imageUrl: string;
@@ -43,6 +44,7 @@ const defaultForm: AddReferenceForm = {
 export default function ReferencesPage() {
   const queryClient = useQueryClient();
   const toast = useToast();
+  const t = useT();
 
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -93,11 +95,11 @@ export default function ReferencesPage() {
         return;
       }
       queryClient.invalidateQueries({ queryKey: ['references'] });
-      toast.success('Reference added!');
+      toast.success(t.references.added);
       setAddModalOpen(false);
       setForm(defaultForm);
     },
-    onError: () => toast.error('Failed to add reference'),
+    onError: () => toast.error(t.references.addFailed),
   });
 
   const updateMutation = useMutation({
@@ -109,7 +111,7 @@ export default function ReferencesPage() {
       }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['references'] });
-      toast.success('Reference updated!');
+      toast.success(t.references.updated);
       setEditRef(null);
       setAddModalOpen(false);
     },
@@ -120,14 +122,14 @@ export default function ReferencesPage() {
       fetch(`/api/references/${id}`, { method: 'DELETE' }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['references'] });
-      toast.success('Reference deleted');
+      toast.success(t.references.deleted);
     },
   });
 
   const validate = () => {
     const e: Partial<AddReferenceForm> = {};
-    if (!form.title.trim()) e.title = 'Title is required';
-    if (!form.imageUrl.trim()) e.imageUrl = 'Image is required';
+    if (!form.title.trim()) e.title = t.references.titleRequired;
+    if (!form.imageUrl.trim()) e.imageUrl = t.references.imageRequired;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -181,9 +183,9 @@ export default function ReferencesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">References</h1>
+          <h1 className="text-xl font-bold text-white">{t.references.title}</h1>
           <p className="text-xs text-gray-500 mt-0.5">
-            {references.length} saved{debouncedSearch ? ` for "${debouncedSearch}"` : ''}
+            {t.references.count(references.length, debouncedSearch || undefined)}
           </p>
         </div>
         <Button
@@ -192,13 +194,13 @@ export default function ReferencesPage() {
           onClick={openAddModal}
           leftIcon={<Plus size={14} />}
         >
-          Add
+          {t.references.addBtn}
         </Button>
       </div>
 
       {/* Search */}
       <Input
-        placeholder="Search references..."
+        placeholder={t.references.searchPlaceholder}
         value={search}
         onChange={(e) => setSearch(e.target.value)}
         leftIcon={<Search size={16} />}
@@ -231,7 +233,7 @@ export default function ReferencesPage() {
               onClick={() => setTagFilter([])}
               className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-medium bg-red-500/10 text-red-400 hover:bg-red-500/20"
             >
-              Clear filters
+              {t.references.clearFilters}
             </button>
           )}
         </div>
@@ -254,15 +256,15 @@ export default function ReferencesPage() {
           animate={{ opacity: 1 }}
           className="flex flex-col items-center justify-center py-16 text-center"
         >
-          <div className="w-16 h-16 rounded-2xl bg-violet-500/10 flex items-center justify-center mb-4">
-            <BookImage size={28} className="text-violet-400" />
+          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4">
+            <BookImage size={28} className="text-emerald-400" />
           </div>
-          <h3 className="font-semibold text-white mb-2">No references yet</h3>
+          <h3 className="font-semibold text-white mb-2">{t.references.emptyTitle}</h3>
           <p className="text-sm text-gray-500 mb-5 max-w-[220px]">
-            Start collecting images and inspiration for your projects.
+            {t.references.emptyDesc}
           </p>
           <Button variant="primary" onClick={openAddModal} leftIcon={<Plus size={16} />}>
-            Add First Reference
+            {t.references.emptyCta}
           </Button>
         </motion.div>
       ) : (
@@ -285,7 +287,7 @@ export default function ReferencesPage() {
       <Modal
         isOpen={addModalOpen}
         onClose={() => { setAddModalOpen(false); setEditRef(null); }}
-        title={editRef ? 'Edit Reference' : 'Add Reference'}
+        title={editRef ? t.references.editModal : t.references.addModal}
         size="md"
       >
         <div className="space-y-4">
@@ -300,7 +302,7 @@ export default function ReferencesPage() {
                 style={uploadMode === 'upload' ? { background: 'var(--accent-primary)' } : undefined}
               >
                 <ImageIcon size={14} />
-                Upload Image
+                {t.references.uploadImage}
               </button>
               <button
                 onClick={() => setUploadMode('url')}
@@ -310,7 +312,7 @@ export default function ReferencesPage() {
                 style={uploadMode === 'url' ? { background: 'var(--accent-primary)' } : undefined}
               >
                 <Link2 size={14} />
-                From URL
+                {t.references.fromUrl}
               </button>
             </div>
           )}
@@ -325,7 +327,7 @@ export default function ReferencesPage() {
             />
           ) : (
             <Input
-              label="Image URL"
+              label={t.references.imageUrl}
               placeholder="https://example.com/image.jpg"
               value={form.imageUrl}
               onChange={(e) => setForm((p) => ({ ...p, imageUrl: e.target.value }))}
@@ -334,8 +336,8 @@ export default function ReferencesPage() {
           )}
 
           <Input
-            label="Title"
-            placeholder="e.g. Minimal UI inspiration"
+            label={t.references.titleLabel}
+            placeholder={t.references.titlePlaceholder}
             value={form.title}
             onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
             error={errors.title}
@@ -343,23 +345,23 @@ export default function ReferencesPage() {
           />
 
           <Input
-            label="Source URL"
-            placeholder="https://dribbble.com/..."
+            label={t.references.sourceUrl}
+            placeholder={t.references.sourcePlaceholder}
             value={form.sourceUrl}
             onChange={(e) => setForm((p) => ({ ...p, sourceUrl: e.target.value }))}
           />
 
           <Input
-            label="Tags"
-            placeholder="ui, minimal, dark (comma separated)"
+            label={t.references.tagsLabel}
+            placeholder={t.references.tagsPlaceholder}
             value={form.tags}
             onChange={(e) => setForm((p) => ({ ...p, tags: e.target.value }))}
-            hint="Separate tags with commas"
+            hint={t.references.tagsHint}
           />
 
           <Textarea
-            label="Notes"
-            placeholder="What do you love about this reference?"
+            label={t.references.notesLabel}
+            placeholder={t.references.notesPlaceholder}
             value={form.notes}
             onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
             rows={2}
@@ -368,13 +370,14 @@ export default function ReferencesPage() {
           {/* Link to project */}
           {projects.length > 0 && (
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-gray-300">Link to Project</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{t.references.linkProject}</label>
               <select
                 value={form.linkedProjectId}
                 onChange={(e) => setForm((p) => ({ ...p, linkedProjectId: e.target.value }))}
-                className="w-full px-4 py-3 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-default)] text-[var(--text-primary)] text-sm focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl border text-sm focus:outline-none"
+                style={{ backgroundColor: 'var(--bg-secondary)', borderColor: 'var(--border-default)', color: 'var(--text-primary)' }}
               >
-                <option value="">None</option>
+                <option value="">{t.references.none}</option>
                 {projects.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.title}
@@ -390,7 +393,7 @@ export default function ReferencesPage() {
               fullWidth
               onClick={() => { setAddModalOpen(false); setEditRef(null); }}
             >
-              Cancel
+              {t.references.cancel}
             </Button>
             <Button
               variant="primary"
@@ -398,7 +401,7 @@ export default function ReferencesPage() {
               loading={createMutation.isPending || updateMutation.isPending}
               onClick={handleSubmit}
             >
-              {editRef ? 'Save Changes' : 'Add Reference'}
+              {editRef ? t.references.saveChanges : t.references.addRef}
             </Button>
           </div>
         </div>

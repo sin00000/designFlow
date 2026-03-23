@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { User } from '@/types';
+import type { Lang } from '@/lib/i18n';
 
 interface ModalState {
   addReference: boolean;
@@ -20,6 +21,10 @@ interface AppState {
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
   toggleTheme: () => void;
+
+  // Language
+  lang: Lang;
+  setLang: (lang: Lang) => void;
 
   // Navigation
   activeTab: string;
@@ -70,10 +75,14 @@ export const useAppStore = create<AppState>()(
       setCurrentUser: (user) => set({ currentUser: user }),
 
       // Theme
-      theme: 'dark',
+      theme: 'light',
       setTheme: (theme) => set({ theme }),
       toggleTheme: () =>
         set((state) => ({ theme: state.theme === 'dark' ? 'light' : 'dark' })),
+
+      // Language
+      lang: 'ko',
+      setLang: (lang) => set({ lang }),
 
       // Navigation
       activeTab: 'home',
@@ -118,6 +127,7 @@ export const useAppStore = create<AppState>()(
         theme: state.theme,
         projectsView: state.projectsView,
         activeTab: state.activeTab,
+        lang: state.lang,
       }),
     }
   )

@@ -142,8 +142,8 @@ export default function ImageUpload({
         'flex flex-col items-center justify-center gap-3 p-6 text-center',
         aspectRatioMap[aspectRatio],
         isDragActive
-          ? 'border-indigo-500/60 bg-indigo-500/5'
-          : 'border-[var(--border-default)] hover:border-indigo-500/40 hover:bg-white/2',
+          ? 'border-green-600/60 bg-green-500/5'
+          : 'border-[var(--border-default)] hover:border-green-600/40 hover:bg-white/2',
         (disabled || uploading) && 'opacity-50 cursor-not-allowed',
         className
       )}
@@ -151,17 +151,17 @@ export default function ImageUpload({
       <input {...getInputProps()} />
       {uploading ? (
         <>
-          <Loader2 size={32} className="animate-spin text-indigo-400" />
+          <Loader2 size={32} className="animate-spin text-green-500" />
           <p className="text-sm text-gray-400">Uploading...</p>
         </>
       ) : (
         <>
           <div className={cn(
             'p-3 rounded-xl transition-colors',
-            isDragActive ? 'bg-indigo-500/20' : 'bg-white/5'
+            isDragActive ? 'bg-green-600/20' : 'bg-white/5'
           )}>
             {isDragActive ? (
-              <Upload size={24} className="text-indigo-400" />
+              <Upload size={24} className="text-green-500" />
             ) : (
               <ImageIcon size={24} className="text-gray-500" />
             )}

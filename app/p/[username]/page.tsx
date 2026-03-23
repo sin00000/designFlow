@@ -2,9 +2,20 @@ import { notFound } from 'next/navigation';
 import db from '@/lib/db';
 import { getInitials } from '@/lib/utils';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Globe, Sparkles } from 'lucide-react';
-import { TagList } from '@/components/ui/Badge';
+import PortfolioCard from './PortfolioCard';
+import NetworkView from './NetworkView';
+
+export const dynamic = 'force-dynamic';
+
+// link: external stylesheet URL (loaded via <link rel="stylesheet">)
+// style: inline @font-face CSS (injected via <style>)
+const FONT_DEFS: Record<string, { link?: string; style?: string; family: string }> = {
+  'nanum-myeongjo':   { link: '//fonts.googleapis.com/earlyaccess/nanummyeongjo.css',                          family: "'Nanum Myeongjo', serif" },
+  'mona12':           { link: 'https://cdn.jsdelivr.net/gh/MonadABXY/mona-font/web/mona.css',                  family: "'Mona12', sans-serif" },
+  'school-safety':    { style: "@font-face{font-family:'SchoolSafetyHalfMoon';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2508-2@1.0/HakgyoansimBandalL.woff2') format('woff2');font-weight:normal;}",              family: "'SchoolSafetyHalfMoon', sans-serif" },
+  'yoon-cho-woo-san': { style: "@font-face{font-family:'YoonChoWooSan';src:url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408@1.0/YoonChildfundkoreaManSeh.woff2') format('woff2');font-weight:normal;font-display:swap;}", family: "'YoonChoWooSan', sans-serif" },
+  'yangjin':          { style: "@font-face{font-family:'Yangjin';src:url('https://cdn.jsdelivr.net/gh/supernovice-lab/font@0.9/yangjin.woff') format('woff');font-weight:normal;font-display:swap;}",                     family: "'Yangjin', sans-serif" },
+};
 
 interface PublicPortfolioPageProps {
   params: { username: string };
@@ -20,7 +31,7 @@ export async function generateMetadata({ params }: PublicPortfolioPageProps): Pr
 
   return {
     title: `${user.name || params.username}'s Portfolio`,
-    description: user.bio || `View ${user.name}'s design portfolio on DesignFlow`,
+    description: user.bio || `View ${user.name}'s portfolio`,
   };
 }
 
@@ -34,6 +45,9 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
       bio: true,
       image: true,
       avatar: true,
+      portfolioLayout: true,
+      portfolioBgColor: true,
+      portfolioFont: true,
     },
   });
 
@@ -46,150 +60,92 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
         select: { id: true, title: true, description: true, coverImage: true },
       },
     },
-    orderBy: { updatedAt: 'desc' },
+    orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
   });
 
   const avatarUrl = user.avatar || user.image;
   const initials = getInitials(user.name);
 
-  return (
-    <div className="min-h-screen bg-[#0f0f0f]">
-      {/* Header */}
-      <div className="border-b border-[#2a2a2a] bg-[#0f0f0f]/95 backdrop-blur-xl">
-        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-              <Sparkles size={14} className="text-white" />
-            </div>
-            <span className="font-bold text-white text-sm">DesignFlow</span>
-          </Link>
-          <Link
-            href="/register"
-            className="text-xs text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
-          >
-            Get started →
-          </Link>
-        </div>
-      </div>
+  const bgColor = user.portfolioBgColor || '#f9fafb';
+  const fontDef = FONT_DEFS[user.portfolioFont || ''];
+  const fontFamily = fontDef?.family || 'inherit';
 
-      {/* Hero - User bio */}
-      <div className="max-w-3xl mx-auto px-4 py-12">
-        <div className="flex flex-col items-center text-center mb-12">
+  return (
+    <div className="min-h-screen" style={{ backgroundColor: bgColor, fontFamily }}>
+      <style dangerouslySetInnerHTML={{ __html: `html, body { background-color: ${bgColor} !important; font-family: ${fontFamily}; }${fontDef?.style ?? ''}` }} />
+      {fontDef?.link && <link rel="stylesheet" href={fontDef.link} />}
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        {/* Profile hero */}
+        <div className="flex flex-col items-center text-center mb-10">
           {avatarUrl ? (
             <img
               src={avatarUrl}
               alt={user.name || user.username || ''}
-              className="w-24 h-24 rounded-3xl object-cover border-4 border-[#2a2a2a] mb-4 shadow-xl"
+              className="w-20 h-20 rounded-2xl object-cover mb-4"
+              style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
             />
           ) : (
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-xl shadow-indigo-500/20">
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center text-white text-2xl font-bold mb-4"
+              style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)' }}
+            >
               {initials}
             </div>
           )}
-          <h1 className="text-3xl font-bold text-white mb-1">{user.name || user.username}</h1>
-          {user.username && (
-            <p className="text-gray-500 text-sm mb-3">@{user.username}</p>
-          )}
+          <h1 className="text-2xl font-bold mb-2" style={{ color: '#111827' }}>
+            {user.name || user.username}
+          </h1>
           {user.bio && (
-            <p className="text-gray-300 text-base max-w-[480px] leading-relaxed">{user.bio}</p>
+            <p className="text-sm max-w-sm leading-relaxed" style={{ color: '#374151' }}>{user.bio}</p>
           )}
         </div>
 
-        {/* Portfolio items */}
+        {/* Portfolio grid */}
         {portfolioItems.length === 0 ? (
           <div className="text-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-4">
-              <Globe size={28} className="text-gray-500" />
-            </div>
-            <p className="text-gray-500">No public portfolio items yet</p>
+            <p style={{ color: '#9ca3af' }}>No public portfolio items yet</p>
           </div>
+        ) : user.portfolioLayout === 'network' ? (
+          <NetworkView
+            lineColor={bgColor === '#f9fafb' ? '#111827' : '#ffffff'}
+            items={portfolioItems.map((item) => ({
+              id: item.id,
+              title: item.title,
+              description: item.description,
+              imageUrl: item.imageUrl,
+              linkUrl: item.linkUrl,
+              videoUrl: item.videoUrl,
+              coverColor: item.coverColor || '#16a34a',
+              tags: (() => { try { return typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []); } catch { return []; } })(),
+              project: item.project,
+            }))}
+          />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {portfolioItems.map((item) => (
-              <div
+          <div className={
+            user.portfolioLayout === 'editorial' ? 'flex flex-col gap-4' :
+            user.portfolioLayout === 'book' ? 'grid grid-cols-2 gap-1' :
+            'columns-2 gap-3'
+          }>
+            {portfolioItems.map((item, i) => (
+              <PortfolioCard
                 key={item.id}
-                className="group bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl overflow-hidden hover:border-white/10 transition-all hover:-translate-y-1 hover:shadow-card-hover"
-              >
-                {/* Cover */}
-                {item.imageUrl ? (
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                ) : item.project?.coverImage ? (
-                  <div className="aspect-video overflow-hidden">
-                    <img
-                      src={item.project.coverImage}
-                      alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                  </div>
-                ) : (
-                  <div
-                    className="aspect-video flex items-center justify-center"
-                    style={{
-                      background: `linear-gradient(135deg, ${item.coverColor}44 0%, ${item.coverColor}22 100%)`,
-                    }}
-                  >
-                    <span
-                      className="text-5xl font-bold opacity-20"
-                      style={{ color: item.coverColor }}
-                    >
-                      {item.title.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                )}
-
-                {/* Content */}
-                <div className="p-5">
-                  <h3 className="text-lg font-semibold text-white mb-2 leading-snug">{item.title}</h3>
-                  {item.description && (
-                    <p className="text-sm text-gray-400 leading-relaxed line-clamp-3 mb-3">
-                      {item.description}
-                    </p>
-                  )}
-                  {item.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2.5 py-1 bg-white/5 text-gray-400 text-xs rounded-lg border border-white/5"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+                colSpan={user.portfolioLayout === 'mosaic' && (i % 7 === 0) ? 'col-span-2' : undefined}
+                item={{
+                  id: item.id,
+                  title: item.title,
+                  description: item.description,
+                  imageUrl: item.imageUrl,
+                  linkUrl: item.linkUrl,
+                  videoUrl: item.videoUrl,
+                  coverColor: item.coverColor || '#16a34a',
+                  tags: (() => { try { return typeof item.tags === 'string' ? JSON.parse(item.tags) : (item.tags || []); } catch { return []; } })(),
+                  project: item.project,
+                }}
+              />
             ))}
           </div>
         )}
       </div>
-
-      {/* Footer */}
-      <footer className="border-t border-[#2a2a2a] mt-16">
-        <div className="max-w-3xl mx-auto px-4 py-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="w-5 h-5 rounded bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center">
-              <Sparkles size={10} className="text-white" />
-            </div>
-            <span className="text-sm font-medium text-gray-400">Powered by DesignFlow</span>
-          </div>
-          <p className="text-xs text-gray-600">
-            Your complete design workflow from inspiration to portfolio
-          </p>
-          <Link
-            href="/register"
-            className="inline-block mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
-          >
-            Create your own portfolio →
-          </Link>
-        </div>
-      </footer>
     </div>
   );
 }

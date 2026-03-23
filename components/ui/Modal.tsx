@@ -93,7 +93,7 @@ export default function Modal({
           >
             {/* Drag handle (mobile) */}
             <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="w-10 h-1 bg-white/20 rounded-full" />
+              <div className="w-10 h-1 rounded-full" style={{ backgroundColor: 'var(--border-strong)' }} />
             </div>
 
             {/* Header */}
@@ -101,16 +101,19 @@ export default function Modal({
               <div className="flex items-start justify-between px-6 py-4">
                 <div>
                   {title && (
-                    <h2 className="text-lg font-semibold text-white">{title}</h2>
+                    <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
                   )}
                   {description && (
-                    <p className="mt-1 text-sm text-gray-400">{description}</p>
+                    <p className="mt-1 text-sm" style={{ color: 'var(--text-secondary)' }}>{description}</p>
                   )}
                 </div>
                 {showCloseButton && (
                   <button
                     onClick={handleClose}
-                    className="ml-4 p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/10 transition-colors flex-shrink-0"
+                    className="ml-4 p-1.5 rounded-lg transition-colors flex-shrink-0"
+                    style={{ color: 'var(--text-muted)' }}
+                    onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--bg-tertiary)'; (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)'; }}
+                    onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = ''; (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)'; }}
                   >
                     <X size={18} />
                   </button>

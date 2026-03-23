@@ -27,15 +27,15 @@ interface BadgeProps {
 
 const variantStyles: Record<BadgeVariant, string> = {
   default: 'bg-white/10 text-white/70 border-white/10',
-  indigo: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20',
-  violet: 'bg-violet-500/15 text-violet-400 border-violet-500/20',
+  indigo: 'bg-green-500/15 text-green-400 border-green-500/20',
+  violet: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
   green: 'bg-green-500/15 text-green-400 border-green-500/20',
   amber: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
   red: 'bg-red-500/15 text-red-400 border-red-500/20',
   blue: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
   gray: 'bg-gray-500/15 text-gray-400 border-gray-500/20',
   planning: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
-  in_progress: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20',
+  in_progress: 'bg-green-500/15 text-green-400 border-green-500/20',
   review: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
   completed: 'bg-green-500/15 text-green-400 border-green-500/20',
 };

@@ -21,7 +21,7 @@ const sizeMap = {
 };
 
 const variantMap = {
-  default: 'from-indigo-500 to-violet-500',
+  default: 'from-green-600 to-emerald-500',
   success: 'from-green-500 to-emerald-500',
   warning: 'from-amber-500 to-orange-500',
   danger: 'from-red-500 to-rose-500',

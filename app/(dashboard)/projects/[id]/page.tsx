@@ -9,14 +9,10 @@ import {
   Plus,
   CheckSquare,
   BookImage,
-  Share2,
   LayoutTemplate,
   Images,
   Trash2,
   Check,
-  Circle,
-  Clock,
-  ChevronDown,
   Loader2,
   Flag,
   Upload,
@@ -28,7 +24,6 @@ import Modal from '@/components/ui/Modal';
 import ProgressBar from '@/components/ui/ProgressBar';
 import { Badge } from '@/components/ui/Badge';
 import ImageUpload from '@/components/ui/ImageUpload';
-import { StarDisplay } from '@/components/ui/StarRating';
 import useToast from '@/lib/hooks/use-toast';
 import {
   cn,
@@ -39,27 +34,21 @@ import {
   getPriorityColor,
 } from '@/lib/utils';
 import type { Project, Task, TaskStatus, Priority, ProjectStatus } from '@/types';
+import { useT } from '@/lib/i18n';
 
-type Tab = 'tasks' | 'references' | 'work' | 'share';
+type Tab = 'tasks' | 'references' | 'work';
 
 export default function ProjectDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const t = useT();
 
   const [activeTab, setActiveTab] = useState<Tab>('tasks');
   const [addTaskOpen, setAddTaskOpen] = useState(false);
-  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [portfolioModalOpen, setPortfolioModalOpen] = useState(false);
   const [taskForm, setTaskForm] = useState({ title: '', priority: 'MEDIUM' as Priority });
-  const [shareForm, setShareForm] = useState({
-    title: '',
-    description: '',
-    tags: '',
-    isAnonymous: false,
-    imageUrl: '',
-  });
   const [portfolioForm, setPortfolioForm] = useState({
     title: '',
     description: '',
@@ -97,7 +86,7 @@ export default function ProjectDetailPage() {
     onSuccess: (data) => {
       if (data.error) { toast.error(data.error); return; }
       queryClient.invalidateQueries({ queryKey: ['project', id] });
-      toast.success('Task added');
+      toast.success(t.projectDetail.taskAdded);
       setAddTaskOpen(false);
       setTaskForm({ title: '', priority: 'MEDIUM' });
     },
@@ -122,22 +111,7 @@ export default function ProjectDetailPage() {
       }).then((r) => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['project', id] });
-      toast.success('Work image added!');
-    },
-  });
-
-  const shareToCommMutation = useMutation({
-    mutationFn: (body: any) =>
-      fetch('/api/community', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }).then((r) => r.json()),
-    onSuccess: (data) => {
-      if (data.error) { toast.error(data.error); return; }
-      toast.success('Shared to community!');
-      setShareModalOpen(false);
-      router.push(`/community/${data.data.id}`);
+      toast.success(t.projectDetail.workImageAdded);
     },
   });
 
@@ -150,7 +124,7 @@ export default function ProjectDetailPage() {
       }).then((r) => r.json()),
     onSuccess: (data) => {
       if (data.error) { toast.error(data.error); return; }
-      toast.success('Added to portfolio!');
+      toast.success(t.portfolio.added);
       setPortfolioModalOpen(false);
       router.push('/portfolio');
     },
@@ -168,21 +142,9 @@ export default function ProjectDetailPage() {
     });
   };
 
-  const handleShareSubmit = () => {
-    if (!shareForm.title.trim() || !shareForm.imageUrl) {
-      toast.error('Title and image are required');
-      return;
-    }
-    shareToCommMutation.mutate({
-      ...shareForm,
-      tags: shareForm.tags.split(',').map((t) => t.trim()).filter(Boolean),
-      projectId: id,
-    });
-  };
-
   const handlePortfolioSubmit = () => {
     if (!portfolioForm.title.trim()) {
-      toast.error('Title is required');
+      toast.error(t.portfolio.titleRequired);
       return;
     }
     createPortfolioMutation.mutate({
@@ -196,7 +158,7 @@ export default function ProjectDetailPage() {
   if (isLoading) {
     return (
       <div className="py-4 flex justify-center items-center min-h-[300px]">
-        <Loader2 size={24} className="animate-spin text-indigo-400" />
+        <Loader2 size={24} className="animate-spin text-green-500" />
       </div>
     );
   }
@@ -204,19 +166,18 @@ export default function ProjectDetailPage() {
   if (!project) {
     return (
       <div className="py-4 text-center">
-        <p className="text-gray-400">Project not found</p>
+        <p className="text-gray-400">{t.projectDetail.notFound}</p>
         <Button variant="ghost" onClick={() => router.push('/projects')} className="mt-4">
-          Back to Projects
+          {t.projectDetail.backToProjects}
         </Button>
       </div>
     );
   }
 
   const tabs: { id: Tab; label: string; icon: React.ElementType; count?: number }[] = [
-    { id: 'tasks', label: 'Tasks', icon: CheckSquare, count: project.tasks?.length },
-    { id: 'references', label: 'References', icon: BookImage, count: project.references?.length },
-    { id: 'work', label: 'Work', icon: Images, count: project.workImages?.length },
-    { id: 'share', label: 'Share', icon: Share2 },
+    { id: 'tasks', label: t.projectDetail.tabTasks, icon: CheckSquare, count: project.tasks?.length },
+    { id: 'references', label: t.projectDetail.tabReferences, icon: BookImage, count: project.references?.length },
+    { id: 'work', label: t.projectDetail.tabProgress, icon: Images, count: project.workImages?.length },
   ];
 
   const tasksByStatus = {
@@ -257,7 +218,7 @@ export default function ProjectDetailPage() {
         {/* Progress slider */}
         <div>
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-400">Progress</span>
+            <span className="text-xs text-gray-400">{t.projectDetail.progress}</span>
             <span className="text-xs font-semibold text-white">{project.progress}%</span>
           </div>
           <ProgressBar value={project.progress} size="md" showLabel={false} />
@@ -267,7 +228,7 @@ export default function ProjectDetailPage() {
             max="100"
             value={project.progress}
             onChange={(e) => updateProjectMutation.mutate({ progress: parseInt(e.target.value) })}
-            className="w-full mt-2 accent-indigo-500 cursor-pointer"
+            className="w-full mt-2 accent-green-600 cursor-pointer"
             style={{ height: '2px' }}
           />
         </div>
@@ -291,56 +252,37 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      {/* Workflow CTAs */}
-      <div className="flex gap-2">
-        <Button
-          variant="secondary"
-          size="sm"
-          fullWidth
-          onClick={() => setShareModalOpen(true)}
-          leftIcon={<Share2 size={14} />}
-        >
-          Share to Community
-        </Button>
-        {project.status === 'COMPLETED' && !project.portfolioItem && (
+      {/* Portfolio CTA */}
+      {project.status === 'COMPLETED' && !project.portfolioItem && (
+        <div className="bg-gradient-to-r from-green-600/10 to-emerald-500/10 border border-green-500/20 rounded-2xl p-4 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-green-600/20 flex items-center justify-center flex-shrink-0">
+            <LayoutTemplate size={16} className="text-green-500" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white">{t.projectDetail.projectComplete}</p>
+            <p className="text-xs text-gray-400">{t.projectDetail.convertSubtitle}</p>
+          </div>
           <Button
             variant="primary"
             size="sm"
-            fullWidth
             onClick={() => {
               setPortfolioForm({ title: project.title, description: project.description || '', tags: '', isPublic: false });
               setPortfolioModalOpen(true);
             }}
-            leftIcon={<LayoutTemplate size={14} />}
           >
-            To Portfolio
+            {t.projectDetail.convert}
           </Button>
-        )}
-        {project.portfolioItem && (
-          <Link href="/portfolio" className="flex-1">
-            <Button variant="secondary" size="sm" fullWidth leftIcon={<LayoutTemplate size={14} />}>
-              View Portfolio
-            </Button>
-          </Link>
-        )}
-      </div>
-
-      {/* Community posts from this project */}
-      {(project.communityPosts?.length ?? 0) > 0 && (
-        <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl p-3">
-          <p className="text-xs font-medium text-gray-400 mb-2">Community posts</p>
-          {project.communityPosts!.map((post) => (
-            <Link key={post.id} href={`/community/${post.id}`}>
-              <div className="flex items-center gap-3 py-2 hover:bg-white/3 rounded-xl px-1 transition-colors">
-                <img src={post.imageUrl} alt={post.title} className="w-10 h-10 rounded-lg object-cover" />
-                <div>
-                  <p className="text-sm text-white">{post.title}</p>
-                  <StarDisplay value={post.averageRating} count={post.ratingCount} size="sm" />
-                </div>
-              </div>
-            </Link>
-          ))}
         </div>
+      )}
+
+      {project.portfolioItem && (
+        <Link href="/portfolio">
+          <div className="flex items-center gap-3 bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl p-3 hover:border-green-600/30 transition-colors">
+            <LayoutTemplate size={15} className="text-green-500 flex-shrink-0" />
+            <p className="text-sm text-gray-300 flex-1">{t.projectDetail.alreadyInPortfolio}</p>
+            <span className="text-xs text-green-500">{t.projectDetail.viewPortfolio}</span>
+          </div>
+        </Link>
       )}
 
       {/* Tabs */}
@@ -352,7 +294,7 @@ export default function ProjectDetailPage() {
             className={cn(
               'flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium transition-all',
               activeTab === tab.id
-                ? 'bg-indigo-500 text-white'
+                ? 'bg-green-600 text-white'
                 : 'text-gray-500 hover:text-gray-300'
             )}
           >
@@ -389,21 +331,21 @@ export default function ProjectDetailPage() {
                   onClick={() => setAddTaskOpen(true)}
                   leftIcon={<Plus size={14} />}
                 >
-                  Add Task
+                  {t.projectDetail.addTask}
                 </Button>
               </div>
 
               {project.tasks?.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <CheckSquare size={24} className="mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No tasks yet</p>
+                  <p className="text-sm">{t.projectDetail.noTasks}</p>
                 </div>
               ) : (
                 Object.entries(tasksByStatus).map(([status, tasks]) =>
                   tasks.length > 0 ? (
                     <div key={status}>
                       <p className="text-xs font-medium text-gray-500 mb-2 uppercase tracking-wider">
-                        {status === 'TODO' ? 'To Do' : status === 'IN_PROGRESS' ? 'In Progress' : 'Done'}
+                        {status === 'TODO' ? t.projectDetail.taskStatusTodo : status === 'IN_PROGRESS' ? t.projectDetail.taskStatusInProgress : t.projectDetail.taskStatusDone}
                         <span className="ml-2 text-gray-600">{tasks.length}</span>
                       </p>
                       <div className="space-y-2">
@@ -425,12 +367,12 @@ export default function ProjectDetailPage() {
                                 task.status === 'DONE'
                                   ? 'bg-green-500 border-green-500'
                                   : task.status === 'IN_PROGRESS'
-                                  ? 'border-indigo-500'
+                                  ? 'border-green-600'
                                   : 'border-gray-600 hover:border-gray-400'
                               )}
                             >
                               {task.status === 'DONE' && <Check size={12} className="text-white" strokeWidth={3} />}
-                              {task.status === 'IN_PROGRESS' && <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />}
+                              {task.status === 'IN_PROGRESS' && <div className="w-1.5 h-1.5 rounded-full bg-green-600" />}
                             </button>
                             <div className="flex-1 min-w-0">
                               <p className={cn(
@@ -447,7 +389,7 @@ export default function ProjectDetailPage() {
                               'text-2xs px-1.5 py-0.5 rounded-md border flex-shrink-0',
                               getPriorityColor(task.priority)
                             )}>
-                              {task.priority.charAt(0) + task.priority.slice(1).toLowerCase()}
+                              {task.priority === 'LOW' ? t.projectDetail.priorityLow : task.priority === 'MEDIUM' ? t.projectDetail.priorityMedium : t.projectDetail.priorityHigh}
                             </span>
                           </motion.div>
                         ))}
@@ -462,18 +404,19 @@ export default function ProjectDetailPage() {
           {/* References tab */}
           {activeTab === 'references' && (
             <div className="space-y-3">
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">{t.projectDetail.referencesCount(project.references?.length || 0)}</p>
                 <Link href={`/references?project=${id}`}>
                   <Button variant="secondary" size="sm" leftIcon={<Plus size={14} />}>
-                    Link More
+                    {t.projectDetail.addReference}
                   </Button>
                 </Link>
               </div>
               {(project.references?.length ?? 0) === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <BookImage size={24} className="mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No references linked</p>
-                  <p className="text-xs mt-1">Go to References tab and link them to this project</p>
+                  <p className="text-sm">{t.projectDetail.noReferencesDesc}</p>
+                  <p className="text-xs mt-1 text-gray-600">{t.projectDetail.refLinkHint}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -492,12 +435,12 @@ export default function ProjectDetailPage() {
             <div className="space-y-3">
               <ImageUpload
                 onChange={(url) => uploadWorkImageMutation.mutate(url)}
-                placeholder="Upload work in progress..."
+                placeholder={t.projectDetail.uploadProgress}
                 aspectRatio="video"
               />
               {(project.workImages?.length ?? 0) === 0 ? (
                 <div className="text-center py-4 text-gray-500">
-                  <p className="text-sm">No work images yet</p>
+                  <p className="text-sm">{t.projectDetail.noWorkImages}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -510,59 +453,6 @@ export default function ProjectDetailPage() {
               )}
             </div>
           )}
-
-          {/* Share tab */}
-          {activeTab === 'share' && (
-            <div className="space-y-4">
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl p-4 space-y-3">
-                <h3 className="text-sm font-semibold text-white">Share to Community</h3>
-                <p className="text-xs text-gray-400">
-                  Get feedback from the design community. You can share anonymously.
-                </p>
-                <Button
-                  variant="primary"
-                  fullWidth
-                  onClick={() => setShareModalOpen(true)}
-                  leftIcon={<Share2 size={16} />}
-                >
-                  Share to Community
-                </Button>
-              </div>
-
-              {project.status === 'COMPLETED' && (
-                <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-2xl p-4 space-y-3">
-                  <h3 className="text-sm font-semibold text-white">Add to Portfolio</h3>
-                  <p className="text-xs text-gray-400">
-                    This project is complete! Showcase it in your portfolio.
-                  </p>
-                  {project.portfolioItem ? (
-                    <Link href="/portfolio">
-                      <Button variant="secondary" fullWidth leftIcon={<LayoutTemplate size={16} />}>
-                        View in Portfolio
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Button
-                      variant="primary"
-                      fullWidth
-                      onClick={() => {
-                        setPortfolioForm({
-                          title: project.title,
-                          description: project.description || '',
-                          tags: '',
-                          isPublic: false,
-                        });
-                        setPortfolioModalOpen(true);
-                      }}
-                      leftIcon={<LayoutTemplate size={16} />}
-                    >
-                      Convert to Portfolio
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
         </motion.div>
       </AnimatePresence>
 
@@ -570,13 +460,13 @@ export default function ProjectDetailPage() {
       <Modal
         isOpen={addTaskOpen}
         onClose={() => setAddTaskOpen(false)}
-        title="Add Task"
+        title={t.projectDetail.addTask}
         size="sm"
       >
         <div className="space-y-4">
           <Input
-            label="Task title"
-            placeholder="e.g. Create wireframes"
+            label={t.projectDetail.taskTitleLabel}
+            placeholder={t.projectDetail.taskTitlePlaceholder}
             value={taskForm.title}
             onChange={(e) => setTaskForm((p) => ({ ...p, title: e.target.value }))}
             onKeyDown={(e) => e.key === 'Enter' && createTaskMutation.mutate(taskForm)}
@@ -584,7 +474,7 @@ export default function ProjectDetailPage() {
             required
           />
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-gray-300">Priority</label>
+            <label className="text-sm font-medium text-gray-300">{t.projectDetail.priority}</label>
             <div className="flex gap-2">
               {(['LOW', 'MEDIUM', 'HIGH'] as Priority[]).map((p) => (
                 <button
@@ -597,14 +487,14 @@ export default function ProjectDetailPage() {
                       : 'border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                   )}
                 >
-                  {p.charAt(0) + p.slice(1).toLowerCase()}
+                  {p === 'LOW' ? t.projectDetail.priorityLow : p === 'MEDIUM' ? t.projectDetail.priorityMedium : t.projectDetail.priorityHigh}
                 </button>
               ))}
             </div>
           </div>
           <div className="flex gap-3">
             <Button variant="secondary" fullWidth onClick={() => setAddTaskOpen(false)}>
-              Cancel
+              {t.projectDetail.cancel}
             </Button>
             <Button
               variant="primary"
@@ -615,70 +505,7 @@ export default function ProjectDetailPage() {
                 createTaskMutation.mutate(taskForm);
               }}
             >
-              Add Task
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Share to community modal */}
-      <Modal
-        isOpen={shareModalOpen}
-        onClose={() => setShareModalOpen(false)}
-        title="Share to Community"
-        size="md"
-      >
-        <div className="space-y-4">
-          <ImageUpload
-            value={shareForm.imageUrl}
-            onChange={(url) => setShareForm((p) => ({ ...p, imageUrl: url }))}
-            onClear={() => setShareForm((p) => ({ ...p, imageUrl: '' }))}
-            aspectRatio="video"
-            placeholder="Add a preview image of your work"
-          />
-          <Input
-            label="Title"
-            placeholder="e.g. Brand Identity Exploration"
-            value={shareForm.title}
-            onChange={(e) => setShareForm((p) => ({ ...p, title: e.target.value }))}
-            required
-          />
-          <Textarea
-            label="Description"
-            placeholder="Tell people about your work and what feedback you're looking for..."
-            value={shareForm.description}
-            onChange={(e) => setShareForm((p) => ({ ...p, description: e.target.value }))}
-            rows={3}
-          />
-          <Input
-            label="Tags"
-            placeholder="ui, branding, minimal"
-            value={shareForm.tags}
-            onChange={(e) => setShareForm((p) => ({ ...p, tags: e.target.value }))}
-          />
-          <label className="flex items-center gap-3 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={shareForm.isAnonymous}
-              onChange={(e) => setShareForm((p) => ({ ...p, isAnonymous: e.target.checked }))}
-              className="w-4 h-4 rounded accent-indigo-500"
-            />
-            <div>
-              <p className="text-sm text-white">Post anonymously</p>
-              <p className="text-xs text-gray-500">Your name won't be shown</p>
-            </div>
-          </label>
-          <div className="flex gap-3">
-            <Button variant="secondary" fullWidth onClick={() => setShareModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              fullWidth
-              loading={shareToCommMutation.isPending}
-              onClick={handleShareSubmit}
-            >
-              Share Work
+              {t.common.add}
             </Button>
           </div>
         </div>
@@ -688,24 +515,24 @@ export default function ProjectDetailPage() {
       <Modal
         isOpen={portfolioModalOpen}
         onClose={() => setPortfolioModalOpen(false)}
-        title="Add to Portfolio"
+        title={t.projectDetail.portfolioModalTitle}
         size="md"
       >
         <div className="space-y-4">
           <Input
-            label="Portfolio Title"
+            label={t.projectDetail.portfolioTitleLabel}
             value={portfolioForm.title}
             onChange={(e) => setPortfolioForm((p) => ({ ...p, title: e.target.value }))}
             required
           />
           <Textarea
-            label="Description"
+            label={t.projectDetail.portfolioDescLabel}
             value={portfolioForm.description}
             onChange={(e) => setPortfolioForm((p) => ({ ...p, description: e.target.value }))}
             rows={3}
           />
           <Input
-            label="Tags"
+            label={t.projectDetail.portfolioTagsLabel}
             placeholder="branding, ui, typography"
             value={portfolioForm.tags}
             onChange={(e) => setPortfolioForm((p) => ({ ...p, tags: e.target.value }))}
@@ -715,16 +542,16 @@ export default function ProjectDetailPage() {
               type="checkbox"
               checked={portfolioForm.isPublic}
               onChange={(e) => setPortfolioForm((p) => ({ ...p, isPublic: e.target.checked }))}
-              className="w-4 h-4 rounded accent-indigo-500"
+              className="w-4 h-4 rounded accent-green-600"
             />
             <div>
-              <p className="text-sm text-white">Make public</p>
-              <p className="text-xs text-gray-500">Anyone can view this portfolio item</p>
+              <p className="text-sm text-white">{t.projectDetail.portfolioPublic}</p>
+              <p className="text-xs text-gray-500">{t.projectDetail.portfolioPublicDesc}</p>
             </div>
           </label>
           <div className="flex gap-3">
             <Button variant="secondary" fullWidth onClick={() => setPortfolioModalOpen(false)}>
-              Cancel
+              {t.projectDetail.cancel}
             </Button>
             <Button
               variant="primary"
@@ -732,7 +559,7 @@ export default function ProjectDetailPage() {
               loading={createPortfolioMutation.isPending}
               onClick={handlePortfolioSubmit}
             >
-              Add to Portfolio
+              {t.projectDetail.convertToPortfolio}
             </Button>
           </div>
         </div>

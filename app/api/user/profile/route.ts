@@ -22,6 +22,9 @@ export async function GET() {
         bio: true,
         image: true,
         avatar: true,
+        portfolioLayout: true,
+        portfolioBgColor: true,
+        portfolioFont: true,
         createdAt: true,
         _count: {
           select: {
@@ -90,6 +93,7 @@ export async function PUT(req: NextRequest) {
       },
     });
 
+    console.log('[USER_PROFILE_PUT] updated:', updated.id, updated.name, updated.username);
     return NextResponse.json({ data: updated, message: 'Profile updated successfully' });
   } catch (error) {
     console.error('[USER_PROFILE_PUT]', error);

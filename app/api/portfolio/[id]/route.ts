@@ -62,7 +62,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { title, description, imageUrl, tags, isPublic, layout, coverColor } = body;
+    const { title, description, imageUrl, tags, isPublic, layout, template, coverColor, mediaItems, videoUrl, linkUrl } = body;
 
     let slug = portfolioItem.publicSlug;
 
@@ -87,7 +87,11 @@ export async function PUT(
         ...(isPublic !== undefined && { isPublic }),
         ...(isPublic !== undefined && { publicSlug: isPublic ? slug : null }),
         ...(layout !== undefined && { layout }),
+        ...(template !== undefined && { template }),
         ...(coverColor !== undefined && { coverColor }),
+        ...(mediaItems !== undefined && { mediaItems: JSON.stringify(mediaItems) }),
+        ...(videoUrl !== undefined && { videoUrl }),
+        ...(linkUrl !== undefined && { linkUrl }),
       },
       include: {
         project: {

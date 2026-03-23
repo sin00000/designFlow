@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
@@ -10,23 +9,23 @@ import StarEyeLogo from '@/components/icons/StarEyeLogo';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import useToast from '@/lib/hooks/use-toast';
+import { useT } from '@/lib/i18n';
 
 export default function LoginPage() {
-  const router = useRouter();
   const toast = useToast();
+  const t = useT();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   const validate = () => {
     const newErrors: typeof errors = {};
-    if (!email) newErrors.email = 'Email is required';
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = 'Invalid email address';
-    if (!password) newErrors.password = 'Password is required';
+    if (!email) newErrors.email = t.auth.login.emailRequired;
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = t.auth.login.emailInvalid;
+    if (!password) newErrors.password = t.auth.login.passwordRequired;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -45,41 +44,30 @@ export default function LoginPage() {
 
       if (result?.error) {
         if (result.error === 'No account found with this email') {
-          setErrors({ email: 'No account found with this email' });
+          setErrors({ email: t.auth.login.emailRequired });
         } else if (result.error === 'Invalid password') {
-          setErrors({ password: 'Incorrect password' });
+          setErrors({ password: t.auth.login.loginFailed });
         } else {
-          toast.error('Login failed. Please check your credentials.');
+          toast.error(t.auth.login.loginFailed);
         }
         return;
       }
 
-      toast.success('Welcome back!');
-      router.push('/');
-      router.refresh();
+      toast.success(t.auth.login.welcomeBack);
+      window.location.href = '/';
     } catch {
-      toast.error('Something went wrong. Please try again.');
+      toast.error(t.auth.login.error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setGoogleLoading(true);
-    try {
-      await signIn('google', { callbackUrl: '/' });
-    } catch {
-      toast.error('Failed to sign in with Google');
-      setGoogleLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: 'var(--bg-primary)' }}>
       {/* Background gradient */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-indigo-500/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-violet-500/5 rounded-full blur-3xl" />
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-green-500/8 rounded-full blur-3xl" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-emerald-500/8 rounded-full blur-3xl" />
       </div>
 
       <motion.div
@@ -89,60 +77,35 @@ export default function LoginPage() {
         className="w-full max-w-sm relative"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center mb-4">
-            <StarEyeLogo size={48} className="text-white" />
-          </div>
-          <h1 className="text-2xl font-bold text-white">DesignFlow</h1>
-          <p className="text-gray-400 text-sm mt-1">Sign in to your account</p>
+        <div className="flex flex-col items-center text-center mb-8">
+          <StarEyeLogo size={48} className="mb-3" />
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-4"
+            style={{
+              background: 'linear-gradient(135deg, rgba(22,163,74,0.15), rgba(34,197,94,0.08))',
+              border: '1px solid rgba(22,163,74,0.3)',
+              color: '#16a34a',
+            }}
+          >
+            <span>✦</span>
+            <span>당신을 위한 디자인 요정</span>
+            <span>✦</span>
+          </motion.div>
+          <h1 className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{t.auth.login.title}</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t.auth.login.subtitle}</p>
         </div>
 
         {/* Card */}
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-3xl p-6 shadow-modal">
-          {/* Google */}
-          <Button
-            variant="secondary"
-            fullWidth
-            loading={googleLoading}
-            onClick={handleGoogleLogin}
-            className="mb-4"
-          >
-            {!googleLoading && (
-              <svg width="18" height="18" viewBox="0 0 18 18">
-                <path
-                  fill="#4285F4"
-                  d="M16.51 8H8.98v3h4.3c-.18 1-.74 1.48-1.6 2.04v2.01h2.6a7.8 7.8 0 002.38-5.88c0-.57-.05-.66-.15-1.18z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M8.98 17c2.16 0 3.97-.72 5.3-1.94l-2.6-2a4.8 4.8 0 01-7.18-2.54H1.83v2.07A8 8 0 008.98 17z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M4.5 10.52a4.8 4.8 0 010-3.04V5.41H1.83a8 8 0 000 7.18l2.67-2.07z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M8.98 4.18c1.17 0 2.23.4 3.06 1.2l2.3-2.3A8 8 0 001.83 5.4L4.5 7.49a4.77 4.77 0 014.48-3.3z"
-                />
-              </svg>
-            )}
-            Continue with Google
-          </Button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-3 my-5">
-            <div className="flex-1 h-px bg-[#2a2a2a]" />
-            <span className="text-xs text-gray-500">or sign in with email</span>
-            <div className="flex-1 h-px bg-[#2a2a2a]" />
-          </div>
-
+        <div className="rounded-3xl p-6" style={{ backgroundColor: 'var(--bg-primary)' }}>
           {/* Email/password form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
-              label="Email"
+              label={t.auth.login.email}
               type="email"
-              placeholder="you@example.com"
+              placeholder={t.auth.register.emailPlaceholder}
               value={email}
               onChange={(e) => {
                 setEmail(e.target.value);
@@ -154,9 +117,9 @@ export default function LoginPage() {
             />
 
             <Input
-              label="Password"
+              label={t.auth.login.password}
               type={showPassword ? 'text' : 'password'}
-              placeholder="Your password"
+              placeholder={t.auth.register.passwordPlaceholder}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
@@ -183,19 +146,33 @@ export default function LoginPage() {
               loading={loading}
               size="lg"
             >
-              Sign In
+              {t.auth.login.submit}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-gray-500 mt-5">
-            Don&apos;t have an account?{' '}
+          <div className="text-center mt-3">
+            <Link
+              href="/forgot-password"
+              className="text-sm transition-colors hover:underline"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              비밀번호를 잃어버리셨나요?
+            </Link>
+          </div>
+
+          <div className="mt-5 pt-5" style={{ borderTop: '1px solid var(--border-default)' }}>
             <Link
               href="/register"
-              className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+              className="flex items-center justify-center w-full py-3 rounded-2xl text-base font-semibold transition-all hover:opacity-90"
+              style={{
+                background: 'rgba(var(--accent-primary-rgb),0.1)',
+                color: 'var(--accent-primary)',
+                border: '1.5px solid rgba(var(--accent-primary-rgb),0.3)',
+              }}
             >
-              Create one
+              계정 만들기
             </Link>
-          </p>
+          </div>
         </div>
       </motion.div>
     </div>

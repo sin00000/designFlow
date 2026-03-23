@@ -1,6 +1,5 @@
 import { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import db from '@/lib/db';
@@ -8,14 +7,6 @@ import db from '@/lib/db';
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
   providers: [
-    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-      ? [
-          GoogleProvider({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          }),
-        ]
-      : []),
     CredentialsProvider({
       name: 'credentials',
       credentials: {
@@ -62,21 +53,11 @@ export const authOptions: NextAuthOptions = {
     error: '/login',
   },
   callbacks: {
-    async jwt({ token, user, account }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
       }
-
-      if (account?.provider === 'google') {
-        const dbUser = await db.user.findUnique({
-          where: { email: token.email! },
-        });
-        if (dbUser) {
-          token.id = dbUser.id;
-        }
-      }
-
       return token;
     },
     async session({ session, token }) {
@@ -107,28 +88,7 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     },
-    async signIn({ user, account }) {
-      if (account?.provider === 'google') {
-        try {
-          const existingUser = await db.user.findUnique({
-            where: { email: user.email! },
-          });
-
-          if (!existingUser) {
-            const username = user.email!.split('@')[0].toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 999);
-            await db.user.update({
-              where: { email: user.email! },
-              data: {
-                username,
-                avatar: user.image,
-              },
-            }).catch(() => {});
-          }
-          return true;
-        } catch {
-          return true;
-        }
-      }
+    async signIn() {
       return true;
     },
   },

@@ -70,7 +70,7 @@ export default function CommunityPostPage() {
   if (isLoading) {
     return (
       <div className="py-4 flex justify-center items-center min-h-[300px]">
-        <Loader2 size={24} className="animate-spin text-indigo-400" />
+        <Loader2 size={24} className="animate-spin text-green-500" />
       </div>
     );
   }
@@ -117,7 +117,7 @@ export default function CommunityPostPage() {
         {authorAvatar ? (
           <img src={authorAvatar} alt={authorName} className="w-10 h-10 rounded-xl object-cover" />
         ) : (
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white font-bold text-sm">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-emerald-500 flex items-center justify-center text-white font-bold text-sm">
             {getInitials(authorName)}
           </div>
         )}
@@ -145,10 +145,10 @@ export default function CommunityPostPage() {
       {/* Project link (if viewer owns it) */}
       {post.isOwner && post.project && (
         <Link href={`/projects/${post.project.id}`}>
-          <div className="flex items-center gap-3 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl p-3">
-            <FolderKanban size={16} className="text-indigo-400" />
+          <div className="flex items-center gap-3 bg-green-500/10 border border-green-500/20 rounded-2xl p-3">
+            <FolderKanban size={16} className="text-green-500" />
             <div>
-              <p className="text-xs text-indigo-400">Based on your project</p>
+              <p className="text-xs text-green-500">Based on your project</p>
               <p className="text-sm font-medium text-white">{post.project.title}</p>
             </div>
           </div>
@@ -181,7 +181,7 @@ export default function CommunityPostPage() {
 
         {!session && (
           <p className="text-xs text-gray-500">
-            <Link href="/login" className="text-indigo-400">Sign in</Link> to rate this work
+            <Link href="/login" className="text-green-500">Sign in</Link> to rate this work
           </p>
         )}
       </div>
@@ -207,7 +207,7 @@ export default function CommunityPostPage() {
                     size={16}
                     className={cn(
                       'transition-colors',
-                      comment.trim() ? 'text-indigo-400 hover:text-indigo-300' : 'text-gray-600'
+                      comment.trim() ? 'text-green-500 hover:text-green-400' : 'text-gray-600'
                     )}
                   />
                 </button>
@@ -218,7 +218,7 @@ export default function CommunityPostPage() {
                 type="checkbox"
                 checked={anonymousComment}
                 onChange={(e) => setAnonymousComment(e.target.checked)}
-                className="w-3.5 h-3.5 accent-indigo-500 rounded"
+                className="w-3.5 h-3.5 accent-green-600 rounded"
               />
               <span className="text-xs text-gray-500">Comment anonymously</span>
             </label>
@@ -227,7 +227,7 @@ export default function CommunityPostPage() {
           <Link href="/login">
             <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] border-dashed rounded-xl p-3 text-center">
               <p className="text-xs text-gray-500">
-                <span className="text-indigo-400">Sign in</span> to leave a comment
+                <span className="text-green-500">Sign in</span> to leave a comment
               </p>
             </div>
           </Link>
@@ -251,7 +251,7 @@ export default function CommunityPostPage() {
                 {cAvatar ? (
                   <img src={cAvatar} alt={cAuthorName} className="w-7 h-7 rounded-lg object-cover flex-shrink-0 mt-0.5" />
                 ) : (
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500/40 to-violet-500/40 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-green-600/40 to-emerald-500/40 flex items-center justify-center text-white text-xs font-bold flex-shrink-0 mt-0.5">
                     {getInitials(cAuthorName)}
                   </div>
                 )}

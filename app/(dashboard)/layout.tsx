@@ -16,11 +16,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-primary)' }}>
+    <div style={{ backgroundColor: 'var(--bg-primary)' }}>
       <DashboardHeader user={session.user} />
       <main
-        className="pt-[60px] pb-[80px]"
-        style={{ paddingBottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 16px)' }}
+        style={{
+          paddingTop: '60px',
+          paddingBottom: 'calc(80px + env(safe-area-inset-bottom, 0px))',
+        }}
       >
         <div className="max-w-2xl mx-auto px-4">
           {children}

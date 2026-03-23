@@ -1,8 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { BookImage, Lightbulb, PenTool, MessageCircle, CheckCircle2 } from 'lucide-react';
+import { BookImage, Lightbulb, PenTool, LayoutTemplate } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n';
 
 export type WorkflowStepStatus = 'completed' | 'active' | 'pending';
 
@@ -18,22 +19,22 @@ interface WorkflowBannerProps {
   className?: string;
 }
 
-const defaultSteps: WorkflowStep[] = [
-  { id: 'reference', label: 'Reference', icon: BookImage, status: 'pending' },
-  { id: 'concept',   label: 'Concept',   icon: Lightbulb,    status: 'pending' },
-  { id: 'design',    label: 'Design',    icon: PenTool,      status: 'pending' },
-  { id: 'feedback',  label: 'Feedback',  icon: MessageCircle, status: 'pending' },
-  { id: 'complete',  label: 'Complete',  icon: CheckCircle2,  status: 'pending' },
-];
-
 export default function WorkflowBanner({ steps, className }: WorkflowBannerProps) {
+  const t = useT();
+
+  const defaultSteps: WorkflowStep[] = [
+    { id: 'reference', label: t.workflow.reference, icon: BookImage,      status: 'pending' },
+    { id: 'concept',   label: t.workflow.concept,   icon: Lightbulb,     status: 'pending' },
+    { id: 'design',    label: t.workflow.design,    icon: PenTool,       status: 'pending' },
+    { id: 'portfolio', label: t.workflow.portfolio, icon: LayoutTemplate, status: 'pending' },
+  ];
+
   const mergedSteps: WorkflowStep[] = defaultSteps.map((s, i) => ({
     ...s,
     status: steps?.[i]?.status ?? s.status,
   }));
 
   const completedCount = mergedSteps.filter((s) => s.status === 'completed').length;
-  const activeIndex = mergedSteps.findIndex((s) => s.status === 'active');
   const overallProgress = Math.round((completedCount / mergedSteps.length) * 100);
 
   return (
@@ -41,10 +42,10 @@ export default function WorkflowBanner({ steps, className }: WorkflowBannerProps
       {/* Header row */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-          Design Workflow
+          {t.workflow.title}
         </h3>
         <span className="text-xs font-medium" style={{ color: 'var(--accent-primary)' }}>
-          {overallProgress}% complete
+          {overallProgress}% {t.workflow.complete}
         </span>
       </div>
 

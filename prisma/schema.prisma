@@ -17,9 +17,12 @@ model User {
   emailVerified DateTime?
   image         String?
   username      String?   @unique
-  bio           String?
-  avatar        String?
-  password      String?
+  bio             String?
+  avatar          String?
+  password        String?
+  portfolioLayout  String  @default("grid")
+  portfolioBgColor String  @default("#f9fafb")
+  portfolioFont    String  @default("default")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -68,6 +71,14 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
 }
 
 model Reference {
@@ -200,7 +211,12 @@ model Portfolio {
   isPublic    Boolean  @default(false)
   publicSlug  String?  @unique
   layout      String   @default("grid")
-  coverColor  String   @default("#6366f1")
+  template    String   @default("grid")
+  coverColor  String   @default("#16a34a")
+  mediaItems  String   @default("[]")
+  videoUrl    String?
+  linkUrl     String?
+  sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

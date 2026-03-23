@@ -54,7 +54,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'border focus:outline-none focus:ring-1 transition-colors duration-200',
               error
                 ? 'border-red-500/50 focus:border-red-500/70 focus:ring-red-500/20'
-                : 'border-[var(--border-default)] focus:border-indigo-500/50 focus:ring-indigo-500/30',
+                : 'border-[var(--border-default)] focus:border-green-500/50 focus:ring-green-500/30',
               leftIcon && 'pl-10',
               rightIcon && 'pr-10',
               className
@@ -97,7 +97,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <div className={cn('flex flex-col gap-1.5', fullWidth && 'w-full')}>
         {label && (
-          <label htmlFor={inputId} className="text-sm font-medium text-gray-300">
+          <label htmlFor={inputId} className="text-sm font-medium" style={{ color: 'var(--text-secondary)' } as React.CSSProperties}>
             {label}
             {props.required && <span className="text-red-400 ml-1">*</span>}
           </label>
@@ -110,7 +110,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             'border focus:outline-none focus:ring-1 transition-colors duration-200',
             error
               ? 'border-red-500/50 focus:border-red-500/70 focus:ring-red-500/20'
-              : 'border-[var(--border-default)] focus:border-indigo-500/50 focus:ring-indigo-500/30',
+              : 'border-[var(--border-default)] focus:border-green-500/50 focus:ring-green-500/30',
             className
           )}
           style={{ backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}

@@ -7,36 +7,35 @@
 :root {
   --font-inter: 'Inter', system-ui, sans-serif;
 
-  /* Background colors */
-  --bg-primary: #0f0f0f;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #242424;
-  --bg-overlay: #2e2e2e;
+  /* Background colors — light default */
+  --bg-primary: #f4f4f5;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #ededef;
+  --bg-overlay: #fafafa;
 
-  /* Text colors (updated dynamically by ThemeProvider in JS) */
-  --text-primary: #ffffff;
-  --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
-  --text-disabled: #52525b;
+  /* Text colors */
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-muted: #a1a1aa;
+  --text-disabled: #d4d4d8;
 
   /* Border colors */
-  --border-default: #2a2a2a;
-  --border-subtle: rgba(255, 255, 255, 0.06);
-  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-default: #e4e4e7;
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.15);
 
   /* Accent colors */
-  --accent-indigo: #6366f1;
-  --accent-violet: #8b5cf6;
-  --accent-purple: #a855f7;
+  --accent-green: #16a34a;
+  --accent-emerald: #10b981;
 
   /* Theme-customizable accent (updated via JS) */
-  --accent-primary: #6366f1;
-  --accent-secondary: #8b5cf6;
-  --accent-primary-rgb: 99, 102, 241;
+  --accent-primary: #16a34a;
+  --accent-secondary: #22c55e;
+  --accent-primary-rgb: 22, 163, 74;
 
   /* Card shadows */
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.35);
-  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.55);
+  --shadow-card: 0 1px 8px rgba(0, 0, 0, 0.08);
+  --shadow-card-hover: 0 6px 24px rgba(0, 0, 0, 0.12);
 
   /* Status colors */
   --status-success: #22c55e;
@@ -85,17 +84,17 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3a3a3a;
+  background: #d4d4d8;
   border-radius: 99px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #505050;
+  background: #a1a1aa;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3a3a3a transparent;
+  scrollbar-color: #d4d4d8 transparent;
 }
 
 /* Focus styles */
@@ -119,28 +118,28 @@ html {
 /* Utility classes */
 @layer utilities {
   .gradient-brand {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #4ade80 100%);
   }
 
   .gradient-brand-text {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+    background: linear-gradient(135deg, #16a34a 0%, #22c55e 50%, #4ade80 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .glass {
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.08);
   }
 
   .glass-strong {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(0, 0, 0, 0.10);
   }
 
   .card-hover {
@@ -149,22 +148,22 @@ html {
 
   .card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, #16a34a, #22c55e);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
 
   .glow-indigo {
-    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 20px rgba(22, 163, 74, 0.4);
   }
 
   .glow-violet {
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
   }
 
   .no-scrollbar {
@@ -214,21 +213,36 @@ html {
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-white bg-white/10 hover:bg-white/15 active:scale-95 border border-white/10 hover:border-white/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm active:scale-95 border transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    color: var(--text-primary);
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-default);
+  }
+  .btn-secondary:hover {
+    background-color: var(--bg-overlay);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-gray-400 hover:text-white hover:bg-white/5 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
   }
 
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm text-white bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 hover:border-red-500/50 active:scale-95 transition-all duration-200 text-red-400 hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm bg-red-50 hover:bg-red-100 border border-red-200 active:scale-95 transition-all duration-200 text-red-500 hover:text-red-600 disabled:opacity-50 disabled:cursor-not-allowed;
   }
 
   .input-base {
-    @apply w-full px-4 py-3 rounded-xl text-white placeholder-gray-500 focus:outline-none transition-colors duration-200 text-sm;
+    @apply w-full px-4 py-3 rounded-xl focus:outline-none transition-colors duration-200 text-sm;
+    color: var(--text-primary);
     background-color: var(--bg-secondary);
     border: 1px solid var(--border-default);
+  }
+  .input-base::placeholder {
+    color: var(--text-muted);
   }
 
   .card-base {
@@ -297,8 +311,8 @@ html {
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(99, 102, 241, 0.2);
-  border-top-color: #6366f1;
+  border: 2px solid rgba(22, 163, 74, 0.2);
+  border-top-color: #16a34a;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
 }
@@ -403,68 +417,53 @@ html {
 /* Input focus accent */
 .input-base:focus {
   border-color: rgba(var(--accent-primary-rgb), 0.5) !important;
-  box-shadow: 0 0 0 1px rgba(var(--accent-primary-rgb), 0.3) !important;
+  box-shadow: 0 0 0 3px rgba(var(--accent-primary-rgb), 0.12) !important;
 }
 
-/* ─── Light mode: override hardcoded Tailwind text/bg colors ─────────────── */
-/* Excluded: buttons (.btn-primary, button with gradient), avatar initials    */
+/* ─── Override hardcoded Tailwind dark-mode colors ───────────────────────── */
 
-[data-theme="light"] .text-white:not(
-  .btn-primary,
-  .btn-secondary,
-  [class*="gradient"],
-  [style*="gradient"]
-) {
-  color: var(--text-primary) !important;
+/* White text → use CSS variable text color */
+.text-white:not(.btn-primary):not([style*="gradient"]):not([style*="linear-gradient"]) {
+  color: var(--text-primary);
 }
 
-[data-theme="light"] .text-gray-100,
-[data-theme="light"] .text-gray-200,
-[data-theme="light"] .text-gray-300 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="light"] .text-gray-400,
-[data-theme="light"] .text-gray-500 {
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="light"] .text-gray-600,
-[data-theme="light"] .text-gray-700 {
-  color: var(--text-muted) !important;
-}
-
-/* Restore white text on gradient/colored buttons in light mode */
-[data-theme="light"] .btn-primary,
-[data-theme="light"] button[style*="gradient"],
-[data-theme="light"] a[style*="gradient"] {
+/* Restore white text on gradient buttons and avatar initials */
+.btn-primary,
+button[style*="gradient"],
+a[style*="gradient"],
+[style*="linear-gradient(135deg, var(--accent"] {
   color: #ffffff !important;
 }
 
-/* Restore white text inside colored icon circles (avatar initials etc.) */
-[data-theme="light"] [style*="linear-gradient(135deg, var(--accent"] {
-  color: #ffffff !important;
-}
+.text-gray-100, .text-gray-200, .text-gray-300 { color: var(--text-secondary); }
+.text-gray-400, .text-gray-500               { color: var(--text-secondary); }
+.text-gray-600, .text-gray-700               { color: var(--text-muted); }
 
-/* Fix hover utilities that rely on white */
-[data-theme="light"] .hover\:text-white:hover {
-  color: var(--text-primary) !important;
-}
+/* hover:text-white */
+.hover\:text-white:hover { color: var(--text-primary) !important; }
+.hover\:text-gray-300:hover { color: var(--text-secondary) !important; }
 
-/* Fix bg-white/5 hover backgrounds in light mode */
-[data-theme="light"] .hover\:bg-white\/5:hover,
-[data-theme="light"] .hover\:bg-white\/10:hover {
-  background-color: rgba(0, 0, 0, 0.05) !important;
-}
+/* bg-white/X opacity utilities → use CSS variable backgrounds */
+.bg-white\/5  { background-color: var(--bg-tertiary) !important; }
+.bg-white\/10 { background-color: var(--bg-tertiary) !important; }
+.bg-white\/\[0\.07\] { background-color: var(--bg-secondary) !important; }
+.bg-white\/15 { background-color: var(--bg-overlay) !important; }
 
-/* Section title text */
-[data-theme="light"] .section-title {
-  color: var(--text-primary) !important;
-}
+/* hover bg-white/X */
+.hover\:bg-white\/5:hover  { background-color: var(--bg-tertiary) !important; }
+.hover\:bg-white\/10:hover { background-color: var(--bg-tertiary) !important; }
+.hover\:bg-white\/15:hover { background-color: var(--bg-overlay) !important; }
 
-/* ─── Theme-aware button variants (used by Button.tsx) ──────────────────── */
-/* Uses CSS variables — works in both dark and light mode automatically      */
+/* border-white/X */
+.border-white\/5  { border-color: var(--border-default) !important; }
+.border-white\/10 { border-color: var(--border-default) !important; }
+.hover\:border-white\/10:hover { border-color: var(--border-default) !important; }
+.hover\:border-white\/20:hover { border-color: var(--border-strong) !important; }
 
+/* Section title */
+.section-title { color: var(--text-primary) !important; }
+
+/* ─── Theme-aware button variants ────────────────────────────────────────── */
 .btn-variant-secondary {
   background-color: var(--bg-tertiary);
   color: var(--text-primary);
@@ -472,7 +471,6 @@ html {
 }
 .btn-variant-secondary:hover {
   background-color: var(--bg-overlay);
-  border-color: var(--border-default);
 }
 
 .btn-variant-ghost {
@@ -484,68 +482,39 @@ html {
   color: var(--text-primary);
 }
 
-/* ─── Light mode: button overrides ──────────────────────────────────────── */
-
-/* Secondary button: white/transparent → subtle dark border */
-[data-theme="light"] .btn-secondary {
-  background-color: rgba(0, 0, 0, 0.06) !important;
-  background-image: none !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-default) !important;
-}
-[data-theme="light"] .btn-secondary:hover {
-  background-color: rgba(0, 0, 0, 0.10) !important;
-  border-color: var(--border-default) !important;
-}
-
-/* Ghost button */
-[data-theme="light"] .btn-ghost {
-  color: var(--text-secondary) !important;
-}
-[data-theme="light"] .btn-ghost:hover {
-  color: var(--text-primary) !important;
-  background-color: rgba(0, 0, 0, 0.06) !important;
+/* ─── Dark mode override (only when explicitly set by user preference) ───── */
+[data-theme="dark"] {
+  --bg-primary: #0f0f0f;
+  --bg-secondary: #1a1a1a;
+  --bg-tertiary: #242424;
+  --bg-overlay: #2e2e2e;
+  --text-primary: #ffffff;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  --text-disabled: #52525b;
+  --border-default: #2a2a2a;
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.55);
 }
 
-/* input-base placeholder */
-[data-theme="light"] .input-base {
-  color: var(--text-primary) !important;
+[data-theme="dark"] .text-white:not(.btn-primary):not([style*="gradient"]) {
+  color: #ffffff !important;
 }
-[data-theme="light"] .input-base::placeholder {
-  color: var(--text-muted) !important;
-}
-
-/* Inline icon buttons (w-8 h-8 style toggle buttons, tab buttons, etc.) */
-[data-theme="light"] button.text-white:not(.btn-primary):not([style*="gradient"]) {
-  color: var(--text-secondary) !important;
-}
-[data-theme="light"] button.text-gray-400:not(.btn-primary) {
-  color: var(--text-secondary) !important;
-}
-
-/* Tab/toggle buttons and any element with these bg classes */
-[data-theme="light"] .border-white\/10,
-[data-theme="light"] .border-white\/5 {
-  border-color: var(--border-default) !important;
-}
-[data-theme="light"] .bg-white\/10 {
-  background-color: var(--bg-tertiary) !important;
-}
-[data-theme="light"] .bg-white\/5 {
-  background-color: var(--bg-secondary) !important;
-}
-[data-theme="light"] .bg-white\/\[0\.07\] {
-  background-color: var(--bg-secondary) !important;
-}
-/* Active tab/selected state */
-[data-theme="light"] button.bg-white\/15,
-[data-theme="light"] .bg-white\/15 {
-  background-color: var(--bg-overlay) !important;
-}
-/* Wrapper containers with bg-white/5 or similar */
-[data-theme="light"] div.bg-white\/5 {
-  background-color: var(--bg-secondary) !important;
-}
-[data-theme="light"] div.bg-white\/10 {
-  background-color: var(--bg-tertiary) !important;
-}
+[data-theme="dark"] .text-gray-100,
+[data-theme="dark"] .text-gray-200,
+[data-theme="dark"] .text-gray-300,
+[data-theme="dark"] .text-gray-400,
+[data-theme="dark"] .text-gray-500 { color: #a1a1aa !important; }
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-700 { color: #71717a !important; }
+[data-theme="dark"] .bg-white\/5  { background-color: rgba(255,255,255,0.05) !important; }
+[data-theme="dark"] .bg-white\/10 { background-color: rgba(255,255,255,0.10) !important; }
+[data-theme="dark"] .bg-white\/15 { background-color: rgba(255,255,255,0.15) !important; }
+[data-theme="dark"] .hover\:bg-white\/5:hover  { background-color: rgba(255,255,255,0.05) !important; }
+[data-theme="dark"] .hover\:bg-white\/10:hover { background-color: rgba(255,255,255,0.10) !important; }
+[data-theme="dark"] .border-white\/5  { border-color: rgba(255,255,255,0.05) !important; }
+[data-theme="dark"] .border-white\/10 { border-color: rgba(255,255,255,0.10) !important; }
+[data-theme="dark"] .hover\:text-white:hover { color: #ffffff !important; }
+[data-theme="dark"] .hover\:text-gray-300:hover { color: #d4d4d8 !important; }

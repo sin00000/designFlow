@@ -3,42 +3,92 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Plus,
-  LayoutGrid,
-  Calendar,
-  FolderKanban,
-  ChevronLeft,
-  ChevronRight,
-} from 'lucide-react';
+import { Plus, FolderKanban, ChevronLeft, ChevronRight, Circle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea } from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
-import ProjectCard from '@/components/cards/ProjectCard';
-import { Badge } from '@/components/ui/Badge';
 import useToast from '@/lib/hooks/use-toast';
-import { cn, getStatusLabel, formatDate } from '@/lib/utils';
+import { cn, getStatusLabel, formatDeadline } from '@/lib/utils';
 import type { Project, ProjectStatus } from '@/types';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths } from 'date-fns';
+import {
+  format, startOfMonth, endOfMonth, eachDayOfInterval,
+  isSameDay, addMonths, subMonths, isToday as dateFnsIsToday,
+} from 'date-fns';
+import { useT } from '@/lib/i18n';
 
-const STATUSES: ProjectStatus[] = ['PLANNING', 'IN_PROGRESS', 'REVIEW', 'COMPLETED'];
-
-const statusColors: Record<ProjectStatus, string> = {
-  PLANNING: 'border-blue-500/30',
-  IN_PROGRESS: 'border-indigo-500/30',
-  REVIEW: 'border-amber-500/30',
-  COMPLETED: 'border-green-500/30',
+const STATUS_META: Record<ProjectStatus, { color: string; dot: string }> = {
+  PLANNING:    { color: '#3b82f6', dot: 'bg-blue-500' },
+  IN_PROGRESS: { color: 'var(--accent-primary)', dot: 'bg-green-600' },
+  REVIEW:      { color: '#f59e0b', dot: 'bg-amber-500' },
+  COMPLETED:   { color: '#22c55e', dot: 'bg-green-400' },
 };
 
+/* ─── Circular progress ─────────────────────────────────── */
+function CircularProgress({ value, size = 44 }: { value: number; size?: number }) {
+  const sw = 3.5;
+  const r = (size - sw) / 2;
+  const circ = 2 * Math.PI * r;
+  const offset = circ - (Math.min(Math.max(value, 0), 100) / 100) * circ;
+  return (
+    <div className="relative flex items-center justify-center flex-shrink-0" style={{ width: size, height: size }}>
+      <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', position: 'absolute' }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border-default)" strokeWidth={sw} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent-primary)" strokeWidth={sw}
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 0.6s ease' }}
+        />
+      </svg>
+      <span className="text-[9px] font-bold relative z-10" style={{ color: 'var(--text-secondary)' }}>{value}%</span>
+    </div>
+  );
+}
+
+/* ─── Project row ────────────────────────────────────────── */
+function ProjectRow({ project, onClick }: { project: Project; onClick: () => void }) {
+  const meta = STATUS_META[project.status];
+  const isOverdue = project.deadline && new Date(project.deadline) < new Date() && project.status !== 'COMPLETED';
+
+  return (
+    <motion.div
+      whileTap={{ scale: 0.98 }}
+      onClick={onClick}
+      className="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer hover:-translate-y-0.5 transition-transform duration-200"
+      style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-default)' }}
+    >
+      {/* Status dot */}
+      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: meta.color }} />
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{project.title}</p>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full" style={{ background: `${meta.color}18`, color: meta.color }}>
+            {getStatusLabel(project.status)}
+          </span>
+          {project.deadline && (
+            <span className="text-[10px]" style={{ color: isOverdue ? '#f87171' : 'var(--text-muted)' }}>
+              {formatDeadline(project.deadline)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Circular progress */}
+      <CircularProgress value={project.progress} />
+    </motion.div>
+  );
+}
+
+/* ─── Main page ──────────────────────────────────────────── */
 export default function ProjectsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const t = useT();
 
-  const [view, setView] = useState<'kanban' | 'calendar'>('kanban');
-  const [addModalOpen, setAddModalOpen] = useState(false);
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [addModalOpen, setAddModalOpen] = useState(false);
   const [form, setForm] = useState({ title: '', description: '', deadline: '' });
   const [errors, setErrors] = useState<{ title?: string }>({});
 
@@ -51,303 +101,183 @@ export default function ProjectsPage() {
 
   const createMutation = useMutation({
     mutationFn: (body: any) =>
-      fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      }).then((r) => r.json()),
+      fetch('/api/projects', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then((r) => r.json()),
     onSuccess: (data) => {
       if (data.error) { toast.error(data.error); return; }
       queryClient.invalidateQueries({ queryKey: ['projects'] });
-      toast.success('Project created!');
+      toast.success(t.projects.created);
       setAddModalOpen(false);
       setForm({ title: '', description: '', deadline: '' });
       router.push(`/projects/${data.data.id}`);
     },
-    onError: () => toast.error('Failed to create project'),
+    onError: () => toast.error(t.projects.createFailed),
   });
 
   const handleCreate = () => {
-    if (!form.title.trim()) { setErrors({ title: 'Title is required' }); return; }
-    createMutation.mutate({
-      title: form.title,
-      description: form.description || undefined,
-      deadline: form.deadline || undefined,
-    });
+    if (!form.title.trim()) { setErrors({ title: t.projects.titleRequired }); return; }
+    createMutation.mutate({ title: form.title, description: form.description || undefined, deadline: form.deadline || undefined });
   };
 
-  // Kanban columns
-  const projectsByStatus = STATUSES.reduce((acc, status) => {
-    acc[status] = projects.filter((p) => p.status === status);
-    return acc;
-  }, {} as Record<ProjectStatus, Project[]>);
-
-  // Calendar data
-  const daysInMonth = eachDayOfInterval({
-    start: startOfMonth(calendarDate),
-    end: endOfMonth(calendarDate),
-  });
-
-  const projectsWithDeadline = projects.filter((p) => p.deadline);
-
-  const getProjectsForDay = (day: Date) =>
-    projectsWithDeadline.filter((p) => isSameDay(new Date(p.deadline!), day));
-
+  // Calendar
+  const daysInMonth = eachDayOfInterval({ start: startOfMonth(calendarDate), end: endOfMonth(calendarDate) });
   const startDayOfWeek = startOfMonth(calendarDate).getDay();
+  const projectsWithDeadline = projects.filter((p) => p.deadline);
+  const getProjectsForDay = (day: Date) => projectsWithDeadline.filter((p) => isSameDay(new Date(p.deadline!), day));
+
+  // Project groups
+  const active = projects.filter((p) => p.status !== 'COMPLETED');
+  const completed = projects.filter((p) => p.status === 'COMPLETED');
 
   return (
     <div className="py-4 space-y-4">
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────── */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-white">Projects</h1>
-          <p className="text-xs text-gray-500 mt-0.5">{projects.length} total projects</p>
+          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{t.projects.title}</h1>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{t.projects.count(projects.length)}</p>
         </div>
-        <div className="flex items-center gap-2">
-          {/* View toggle */}
-          <div className="flex bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-xl p-1 gap-1">
-            <button
-              onClick={() => setView('kanban')}
-              className={cn('p-1.5 rounded-lg transition-colors', view !== 'kanban' && 'text-gray-400')}
-              style={view === 'kanban' ? { background: 'var(--accent-primary)', color: '#fff' } : undefined}
-            >
-              <LayoutGrid size={14} />
-            </button>
-            <button
-              onClick={() => setView('calendar')}
-              className={cn('p-1.5 rounded-lg transition-colors', view !== 'calendar' && 'text-gray-400')}
-              style={view === 'calendar' ? { background: 'var(--accent-primary)', color: '#fff' } : undefined}
-            >
-              <Calendar size={14} />
-            </button>
-          </div>
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setAddModalOpen(true)}
-            leftIcon={<Plus size={14} />}
-          >
-            New
-          </Button>
-        </div>
+        <Button variant="primary" size="sm" onClick={() => setAddModalOpen(true)} leftIcon={<Plus size={14} />}>
+          {t.projects.newBtn}
+        </Button>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-3">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="skeleton h-32 rounded-2xl" />
+      {/* ── Calendar ────────────────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: -8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl overflow-hidden"
+        style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-default)' }}
+      >
+        {/* Month nav */}
+        <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: '1px solid var(--border-default)' }}>
+          <button onClick={() => setCalendarDate(subMonths(calendarDate, 1))} className="p-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }}>
+            <ChevronLeft size={15} />
+          </button>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+            {format(calendarDate, 'yyyy년 M월')}
+          </span>
+          <button onClick={() => setCalendarDate(addMonths(calendarDate, 1))} className="p-1.5 rounded-lg transition-colors hover:bg-white/5" style={{ color: 'var(--text-muted)' }}>
+            <ChevronRight size={15} />
+          </button>
+        </div>
+
+        {/* Day names */}
+        <div className="grid grid-cols-7">
+          {['일', '월', '화', '수', '목', '금', '토'].map((d) => (
+            <div key={d} className="py-2 text-center text-[10px] font-semibold" style={{ color: 'var(--text-muted)' }}>{d}</div>
           ))}
         </div>
-      ) : projects.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center py-16 text-center"
-        >
-          <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4">
-            <FolderKanban size={28} className="text-indigo-400" />
-          </div>
-          <h3 className="font-semibold text-white mb-2">No projects yet</h3>
-          <p className="text-sm text-gray-500 mb-5 max-w-[220px]">
-            Create your first project to start managing your design work.
-          </p>
-          <Button variant="primary" onClick={() => setAddModalOpen(true)} leftIcon={<Plus size={16} />}>
-            Create Project
-          </Button>
-        </motion.div>
-      ) : view === 'kanban' ? (
-        // Kanban view
-        <div className="space-y-6">
-          {STATUSES.map((status) => {
-            const statusProjects = projectsByStatus[status];
-            if (statusProjects.length === 0 && status === 'COMPLETED') return null;
 
+        {/* Days */}
+        <div className="grid grid-cols-7">
+          {Array.from({ length: startDayOfWeek }).map((_, i) => (
+            <div key={`e-${i}`} className="h-11" style={{ borderRight: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }} />
+          ))}
+          {daysInMonth.map((day) => {
+            const dayProjects = getProjectsForDay(day);
+            const isToday = dateFnsIsToday(day);
             return (
-              <div key={status}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div
-                    className={cn('w-2 h-2 rounded-full', {
-                      'bg-blue-500': status === 'PLANNING',
-                      'bg-amber-500': status === 'REVIEW',
-                      'bg-green-500': status === 'COMPLETED',
-                    })}
-                    style={status === 'IN_PROGRESS' ? { background: 'var(--accent-primary)' } : undefined}
-                  />
-                  <h2 className="text-sm font-semibold text-gray-300">{getStatusLabel(status)}</h2>
-                  <span className="text-xs text-gray-600 ml-1">
-                    {statusProjects.length}
-                  </span>
-                </div>
-                {statusProjects.length === 0 ? (
-                  <div
-                    className={cn(
-                      'rounded-2xl border-2 border-dashed h-16 flex items-center justify-center',
-                      statusColors[status].replace('border-', 'border-')
-                    )}
-                    style={{ borderColor: 'rgba(255,255,255,0.04)' }}
-                  >
-                    <span className="text-xs text-gray-600">No projects</span>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <AnimatePresence>
-                      {statusProjects.map((project) => (
-                        <ProjectCard
-                          key={project.id}
-                          project={project}
-                          onClick={() => router.push(`/projects/${project.id}`)}
-                        />
-                      ))}
-                    </AnimatePresence>
+              <div
+                key={day.toISOString()}
+                className="h-11 p-1 relative"
+                style={{ borderRight: '1px solid var(--border-subtle)', borderBottom: '1px solid var(--border-subtle)' }}
+              >
+                <span
+                  className="text-[11px] font-medium flex items-center justify-center w-5 h-5 rounded-full mx-auto"
+                  style={isToday
+                    ? { background: 'var(--accent-primary)', color: '#fff' }
+                    : { color: 'var(--text-muted)' }
+                  }
+                >
+                  {format(day, 'd')}
+                </span>
+                {dayProjects.length > 0 && (
+                  <div className="absolute bottom-1 left-1 right-1 flex gap-0.5 justify-center">
+                    {dayProjects.slice(0, 3).map((p) => (
+                      <button
+                        key={p.id}
+                        onClick={() => router.push(`/projects/${p.id}`)}
+                        className="h-1 flex-1 rounded-full max-w-[12px]"
+                        style={{ backgroundColor: STATUS_META[p.status].color }}
+                        title={p.title}
+                      />
+                    ))}
                   </div>
                 )}
               </div>
             );
           })}
         </div>
+
+        {/* Status legend */}
+        <div className="flex items-center gap-3 px-4 py-2 flex-wrap" style={{ borderTop: '1px solid var(--border-default)' }}>
+          {(Object.entries(STATUS_META) as [ProjectStatus, typeof STATUS_META[ProjectStatus]][]).map(([status, meta]) => (
+            <div key={status} className="flex items-center gap-1">
+              <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: meta.color }} />
+              <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>{getStatusLabel(status)}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* ── Project list ─────────────────────────────────────── */}
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 3 }).map((_, i) => <div key={i} className="skeleton h-16 rounded-2xl" />)}
+        </div>
+      ) : projects.length === 0 ? (
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-12 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center mb-3">
+            <FolderKanban size={24} className="text-green-500" />
+          </div>
+          <h3 className="font-semibold mb-1" style={{ color: 'var(--text-primary)' }}>{t.projects.emptyTitle}</h3>
+          <p className="text-sm mb-4 max-w-[200px]" style={{ color: 'var(--text-muted)' }}>{t.projects.emptyDesc}</p>
+          <Button variant="primary" size="sm" onClick={() => setAddModalOpen(true)} leftIcon={<Plus size={14} />}>{t.projects.emptyCta}</Button>
+        </motion.div>
       ) : (
-        // Calendar view
-        <div className="bg-[var(--bg-secondary)] border border-[var(--border-default)] rounded-2xl overflow-hidden">
-          {/* Calendar header */}
-          <div className="flex items-center justify-between p-4 border-b border-[var(--border-default)]">
-            <button
-              onClick={() => setCalendarDate(subMonths(calendarDate, 1))}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <h2 className="text-sm font-semibold text-white">
-              {format(calendarDate, 'MMMM yyyy')}
-            </h2>
-            <button
-              onClick={() => setCalendarDate(addMonths(calendarDate, 1))}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Day names */}
-          <div className="grid grid-cols-7 border-b border-[var(--border-default)]">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="p-2 text-center text-2xs font-medium text-gray-600">
-                {day}
+        <div className="space-y-5">
+          {/* Active */}
+          {active.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold mb-2 px-1" style={{ color: 'var(--text-muted)' }}>진행 중 · {active.length}</p>
+              <div className="space-y-2">
+                <AnimatePresence>
+                  {active.map((p) => <ProjectRow key={p.id} project={p} onClick={() => router.push(`/projects/${p.id}`)} />)}
+                </AnimatePresence>
               </div>
-            ))}
-          </div>
-
-          {/* Days grid */}
-          <div className="grid grid-cols-7">
-            {/* Empty cells for start of month */}
-            {Array.from({ length: startDayOfWeek }).map((_, i) => (
-              <div key={`empty-${i}`} className="h-12 border-r border-b border-[var(--border-default)]" />
-            ))}
-
-            {daysInMonth.map((day) => {
-              const dayProjects = getProjectsForDay(day);
-              const isToday = isSameDay(day, new Date());
-
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    'h-12 p-1 border-r border-b border-[var(--border-default)] relative',
-                    !isSameMonth(day, calendarDate) && 'opacity-30'
-                  )}
-                >
-                  <span
-                    className={cn(
-                      'text-xs font-medium flex items-center justify-center w-6 h-6 rounded-full',
-                      !isToday && 'text-gray-400'
-                    )}
-                    style={isToday ? { background: 'var(--accent-primary)', color: '#fff' } : undefined}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                  {dayProjects.length > 0 && (
-                    <div className="absolute bottom-1 left-1 right-1 flex gap-0.5">
-                      {dayProjects.slice(0, 3).map((p) => (
-                        <div
-                          key={p.id}
-                          onClick={() => router.push(`/projects/${p.id}`)}
-                          className="h-1 flex-1 rounded-full cursor-pointer"
-                          style={{
-                            background: p.status === 'COMPLETED' ? '#22c55e' :
-                              p.status === 'REVIEW' ? '#f59e0b' :
-                              p.status === 'IN_PROGRESS' ? 'var(--accent-primary)' : '#3b82f6'
-                          }}
-                          title={p.title}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="p-3 border-t border-[var(--border-default)] flex items-center gap-4 flex-wrap">
-            {STATUSES.map((status) => (
-              <div key={status} className="flex items-center gap-1.5">
-                <div
-                  className={cn('w-2 h-2 rounded-full', {
-                    'bg-blue-500': status === 'PLANNING',
-                    'bg-amber-500': status === 'REVIEW',
-                    'bg-green-500': status === 'COMPLETED',
-                  })}
-                  style={status === 'IN_PROGRESS' ? { background: 'var(--accent-primary)' } : undefined}
-                />
-                <span className="text-2xs text-gray-500">{getStatusLabel(status)}</span>
+            </div>
+          )}
+          {/* Completed */}
+          {completed.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold mb-2 px-1" style={{ color: 'var(--text-muted)' }}>완료 · {completed.length}</p>
+              <div className="space-y-2">
+                <AnimatePresence>
+                  {completed.map((p) => <ProjectRow key={p.id} project={p} onClick={() => router.push(`/projects/${p.id}`)} />)}
+                </AnimatePresence>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Create modal */}
-      <Modal
-        isOpen={addModalOpen}
-        onClose={() => setAddModalOpen(false)}
-        title="New Project"
-        size="md"
-      >
+      {/* ── Create modal ─────────────────────────────────────── */}
+      <Modal isOpen={addModalOpen} onClose={() => { setAddModalOpen(false); setErrors({}); }} title={t.projects.modalTitle} size="md">
         <div className="space-y-4">
-          <Input
-            label="Project Title"
-            placeholder="e.g. Brand Identity Redesign"
-            value={form.title}
+          <Input label={t.projects.titleLabel} placeholder={t.projects.titlePlaceholder} value={form.title}
             onChange={(e) => { setForm((p) => ({ ...p, title: e.target.value })); setErrors({}); }}
-            error={errors.title}
-            required
-            autoFocus
+            error={errors.title} required autoFocus
           />
-          <Textarea
-            label="Description"
-            placeholder="What's this project about?"
-            value={form.description}
-            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
-            rows={3}
+          <Textarea label={t.projects.descLabel} placeholder={t.projects.descPlaceholder} value={form.description}
+            onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} rows={3}
           />
-          <Input
-            label="Deadline"
-            type="date"
-            value={form.deadline}
+          <Input label={t.projects.deadlineLabel} type="date" value={form.deadline}
             onChange={(e) => setForm((p) => ({ ...p, deadline: e.target.value }))}
-            className="[color-scheme:dark]"
+            className="[color-scheme:light]"
           />
           <div className="flex gap-3 pt-2">
-            <Button variant="secondary" fullWidth onClick={() => setAddModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              fullWidth
-              loading={createMutation.isPending}
-              onClick={handleCreate}
-            >
-              Create Project
-            </Button>
+            <Button variant="secondary" fullWidth onClick={() => { setAddModalOpen(false); setErrors({}); }}>{t.projects.cancel}</Button>
+            <Button variant="primary" fullWidth loading={createMutation.isPending} onClick={handleCreate}>{t.projects.createBtn}</Button>
           </div>
         </div>
       </Modal>

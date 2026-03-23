@@ -116,6 +116,15 @@ export interface Comment {
   user?: User;
 }
 
+export type PortfolioTemplate = 'grid' | 'editorial' | 'book' | 'network';
+
+export interface PortfolioMediaItem {
+  type: 'image' | 'video' | 'link';
+  url: string;
+  caption?: string;
+  thumbnail?: string;
+}
+
 export interface Portfolio {
   id: string;
   userId: string;
@@ -127,7 +136,11 @@ export interface Portfolio {
   isPublic: boolean;
   publicSlug: string | null;
   layout: string;
+  template: PortfolioTemplate;
   coverColor: string;
+  mediaItems: PortfolioMediaItem[];
+  videoUrl: string | null;
+  linkUrl: string | null;
   createdAt: Date;
   updatedAt: Date;
   user?: User;

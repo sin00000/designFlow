@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     });
 
     return NextResponse.json({ data: portfolioItems });
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { title, description, imageUrl, tags, isPublic, layout, coverColor, projectId } = body;
+    const { title, description, imageUrl, tags, isPublic, layout, template, coverColor, projectId, mediaItems, videoUrl, linkUrl } = body;
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
@@ -94,7 +94,11 @@ export async function POST(request: NextRequest) {
         isPublic: isPublic || false,
         publicSlug: slug,
         layout: layout || 'grid',
-        coverColor: coverColor || '#6366f1',
+        template: template || 'grid',
+        coverColor: coverColor || '#16a34a',
+        mediaItems: JSON.stringify(mediaItems || []),
+        videoUrl: videoUrl || null,
+        linkUrl: linkUrl || null,
       },
       include: {
         project: {
