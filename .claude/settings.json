@@ -14,7 +14,9 @@
       "Bash(grep -r \"coverColor\\\\|ColorPicker\\\\|color.*input\\\\|theme.*color\" /Users/kimseojin/Desktop/dr_wep/app --include=*.tsx --include=*.ts)",
       "Bash(find /Users/kimseojin/Desktop/dr_wep -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\) ! -path */node_modules/* ! -path */.next/*)",
       "Bash(grep -r \"ACCENT_COLORS\\\\|applyAccent\\\\|ThemeProvider\" /Users/kimseojin/Desktop/dr_wep/app --include=*.tsx --include=*.ts)",
-      "Bash(cat /Users/kimseojin/Desktop/dr_wep/app/api/projects/[id]/work-images/route.ts)"
+      "Bash(cat /Users/kimseojin/Desktop/dr_wep/app/api/projects/[id]/work-images/route.ts)",
+      "Bash(curl -sL http://localhost:3003)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)"
     ]
   }
 }

@@ -45,6 +45,7 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
       bio: true,
       image: true,
       avatar: true,
+      email: true,
       portfolioLayout: true,
       portfolioBgColor: true,
       portfolioFont: true,
@@ -145,6 +146,17 @@ export default async function PublicPortfolioPage({ params }: PublicPortfolioPag
             ))}
           </div>
         )}
+      </div>
+
+      {/* Footer */}
+      <div className="mt-16 pb-10 text-center">
+        <a
+          href={`mailto:${user.email}`}
+          className="text-base hover:opacity-70 transition-opacity"
+          style={{ color: '#9ca3af' }}
+        >
+          {user.email}
+        </a>
       </div>
     </div>
   );

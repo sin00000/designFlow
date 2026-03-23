@@ -88,6 +88,23 @@ export default function RegisterPage() {
       }
 
       toast.success(t.auth.register.welcome);
+
+      // Migrate guest portfolio items if any
+      try {
+        const raw = localStorage.getItem('dr_wep_guest');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed?.items?.length > 0) {
+            await fetch('/api/portfolio/migrate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ items: parsed.items }),
+            });
+            localStorage.removeItem('dr_wep_guest');
+          }
+        }
+      } catch {}
+
       window.location.href = '/';
     } catch {
       toast.error(t.auth.register.error);
