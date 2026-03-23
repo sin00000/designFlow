@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import {
   DndContext, closestCenter, PointerSensor, TouchSensor,
   useSensor, useSensors, type DragEndEvent,
@@ -63,13 +62,12 @@ const TEMPLATES: { id: PortfolioTemplate; name: string; description: string; pre
 
 /* ─── PortfolioItemCard ──────────────────────────────────── */
 function PortfolioItemCard({
-  item, onEdit, onDelete, onShare, template,
+  item, onEdit, onDelete, onShare, onExpand, template,
 }: {
-  item: Portfolio; onEdit: () => void; onDelete: () => void; onShare: () => void; template?: PortfolioTemplate;
+  item: Portfolio; onEdit: () => void; onDelete: () => void; onShare: () => void; onExpand?: () => void; template?: PortfolioTemplate;
 }) {
   const [bubbleOpen, setBubbleOpen] = useState(false);
   const [imgExpanded, setImgExpanded] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const t = useT();
   const isEditorial = template === 'editorial';
@@ -77,89 +75,56 @@ function PortfolioItemCard({
   const isNetwork = template === 'network';
   const isMagazineSub = false;
 
-  useEffect(() => { setMounted(true); }, []);
-
   return (
     <div ref={cardRef} className={cn('relative', isBook ? 'h-full' : '', isNetwork ? 'flex flex-col items-center gap-1.5' : '')}>
-      {/* Network/Book: fullscreen card overlay — rendered via portal to escape CSS transform stacking context */}
-      {mounted && createPortal(
-        <AnimatePresence>
-        {(isNetwork || isBook) && imgExpanded && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      {/* Book: fullscreen overlay (not inside CSS transform) */}
+      <AnimatePresence>
+        {isBook && imgExpanded && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-8"
             style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
-            onClick={() => setImgExpanded(false)}
-          >
-            <motion.div
-              initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+            onClick={() => setImgExpanded(false)}>
+            <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
               transition={{ type: 'spring', damping: 24, stiffness: 260 }}
               className="relative w-full max-w-sm rounded-2xl p-5"
               style={{ backgroundColor: '#ffffff', boxShadow: '0 -4px 40px rgba(0,0,0,0.15)' }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* accent bar */}
+              onClick={(e) => e.stopPropagation()}>
               <div className="w-8 h-1 rounded-full mb-4 mx-auto" style={{ backgroundColor: item.coverColor }} />
-
-              {/* title row */}
               <div className="flex items-center gap-3 mb-3">
                 {item.imageUrl ? (
-                  <img src={item.imageUrl} alt={item.title}
-                    className="w-10 h-10 rounded-xl object-cover flex-shrink-0"
-                    style={{ border: `1px solid ${item.coverColor}30` }} />
+                  <img src={item.imageUrl} alt={item.title} className="w-10 h-10 rounded-xl object-cover flex-shrink-0" style={{ border: `1px solid ${item.coverColor}30` }} />
                 ) : (
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{ background: `linear-gradient(135deg, ${item.coverColor}55, ${item.coverColor}22)` }}>
-                    <span className="text-sm font-bold" style={{ color: item.coverColor }}>
-                      {item.title.charAt(0).toUpperCase()}
-                    </span>
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `linear-gradient(135deg, ${item.coverColor}55, ${item.coverColor}22)` }}>
+                    <span className="text-sm font-bold" style={{ color: item.coverColor }}>{item.title.charAt(0).toUpperCase()}</span>
                   </div>
                 )}
                 <p className="font-bold text-base leading-snug" style={{ color: '#111827' }}>{item.title}</p>
               </div>
-
-              {item.description && (
-                <p className="text-sm leading-relaxed mb-3" style={{ color: '#6b7280' }}>{item.description}</p>
-              )}
+              {item.description && <p className="text-sm leading-relaxed mb-3" style={{ color: '#6b7280' }}>{item.description}</p>}
               {item.tags.length > 0 && (
                 <div className="flex gap-1 flex-wrap mb-3">
-                  {item.tags.map((tag) => (
-                    <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-medium"
-                      style={{ backgroundColor: `${item.coverColor}18`, color: item.coverColor, border: `1px solid ${item.coverColor}30` }}>
-                      {tag}
-                    </span>
-                  ))}
+                  {item.tags.map((tag) => <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${item.coverColor}18`, color: item.coverColor, border: `1px solid ${item.coverColor}30` }}>{tag}</span>)}
                 </div>
               )}
               {item.linkUrl && (
-                <a href={item.linkUrl} target="_blank" rel="noopener noreferrer"
-                  onClick={(e) => e.stopPropagation()}
-                  className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-600 transition-colors min-w-0">
-                  <ExternalLink size={11} className="flex-shrink-0" />
-                  <span className="truncate">{item.linkUrl}</span>
+                <a href={item.linkUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-600 transition-colors min-w-0">
+                  <ExternalLink size={11} className="flex-shrink-0" /><span className="truncate">{item.linkUrl}</span>
                 </a>
               )}
-
-              <button
-                onClick={() => setImgExpanded(false)}
-                className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center"
-                style={{ backgroundColor: '#f3f4f6' }}
-              >
+              <button onClick={() => setImgExpanded(false)} className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f3f4f6' }}>
                 <X size={12} style={{ color: '#6b7280' }} />
               </button>
             </motion.div>
           </motion.div>
         )}
-        </AnimatePresence>,
-        document.body
-      )}
+      </AnimatePresence>
 
       {/* Network: circle node */}
       {isNetwork ? (
         <>
           <motion.div
             whileTap={{ scale: 0.95 }}
-            onClick={() => setImgExpanded(true)}
+            onClick={() => onExpand?.()}
             className="group relative overflow-hidden cursor-pointer select-none rounded-full aspect-square w-full"
             style={{
               border: '1px solid var(--border-default)',
@@ -397,6 +362,7 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [mouse, setMouse] = useState({ x: 0, y: 0 });
+  const [expandedItem, setExpandedItem] = useState<Portfolio | null>(null);
   const depthFactors = [0.5, 1.2, 0.3, 1.5, 0.8, 1.0, 0.4, 1.3, 0.7, 1.1, 0.6, 0.9];
   const STRENGTH = 18;
   const CARD_W = 90;
@@ -456,6 +422,48 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
             stroke="white" strokeWidth="2" opacity="0.7" />
         ))}
       </svg>
+      {/* Network overlay — rendered here, outside transform context */}
+      <AnimatePresence>
+        {expandedItem && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end justify-center p-4 pb-8"
+            style={{ backgroundColor: 'rgba(0,0,0,0.6)' }}
+            onClick={() => setExpandedItem(null)}>
+            <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+              transition={{ type: 'spring', damping: 24, stiffness: 260 }}
+              className="relative w-full max-w-sm rounded-2xl p-5"
+              style={{ backgroundColor: '#ffffff', boxShadow: '0 -4px 40px rgba(0,0,0,0.15)' }}
+              onClick={(e) => e.stopPropagation()}>
+              <div className="w-8 h-1 rounded-full mb-4 mx-auto" style={{ backgroundColor: expandedItem.coverColor }} />
+              <div className="flex items-center gap-3 mb-3">
+                {expandedItem.imageUrl ? (
+                  <img src={expandedItem.imageUrl} alt={expandedItem.title} className="w-10 h-10 rounded-xl object-cover flex-shrink-0" style={{ border: `1px solid ${expandedItem.coverColor}30` }} />
+                ) : (
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: `linear-gradient(135deg, ${expandedItem.coverColor}55, ${expandedItem.coverColor}22)` }}>
+                    <span className="text-sm font-bold" style={{ color: expandedItem.coverColor }}>{expandedItem.title.charAt(0).toUpperCase()}</span>
+                  </div>
+                )}
+                <p className="font-bold text-base leading-snug" style={{ color: '#111827' }}>{expandedItem.title}</p>
+              </div>
+              {expandedItem.description && <p className="text-sm leading-relaxed mb-3" style={{ color: '#6b7280' }}>{expandedItem.description}</p>}
+              {expandedItem.tags.length > 0 && (
+                <div className="flex gap-1 flex-wrap mb-3">
+                  {expandedItem.tags.map((tag) => <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${expandedItem.coverColor}18`, color: expandedItem.coverColor, border: `1px solid ${expandedItem.coverColor}30` }}>{tag}</span>)}
+                </div>
+              )}
+              {expandedItem.linkUrl && (
+                <a href={expandedItem.linkUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="flex items-center gap-1.5 text-xs text-blue-500 hover:text-blue-600 transition-colors min-w-0">
+                  <ExternalLink size={11} className="flex-shrink-0" /><span className="truncate">{expandedItem.linkUrl}</span>
+                </a>
+              )}
+              <button onClick={() => setExpandedItem(null)} className="absolute top-4 right-4 w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: '#f3f4f6' }}>
+                <X size={12} style={{ color: '#6b7280' }} />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Items */}
       {items.map((item, i) => {
         const depth = depthFactors[i % depthFactors.length];
@@ -478,7 +486,8 @@ function PortfolioNetworkView({ items, onEdit, onDelete, onShare }: {
             }}
           >
             <PortfolioItemCard item={item} template="network"
-              onEdit={() => onEdit(item)} onDelete={() => onDelete(item.id)} onShare={() => onShare(item)} />
+              onEdit={() => onEdit(item)} onDelete={() => onDelete(item.id)} onShare={() => onShare(item)}
+              onExpand={() => setExpandedItem(item)} />
           </motion.div>
         );
       })}
@@ -890,9 +899,12 @@ export default function HomePage() {
       {/* ── Delete Confirm Modal ────────────────────────────── */}
       <Modal isOpen={!!deleteTargetId} onClose={() => setDeleteTargetId(null)} title="포트폴리오 삭제" size="sm">
         <div className="space-y-4">
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-            한 번 삭제한 포트폴리오는 복구가 불가능합니다.
-          </p>
+          <div className="flex items-start gap-3 p-3 rounded-xl" style={{ backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
+            <Trash2 size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+              한 번 삭제한 포트폴리오는 복구가 불가능합니다.
+            </p>
+          </div>
           <div className="flex gap-3">
             <Button variant="secondary" fullWidth onClick={() => setDeleteTargetId(null)}>취소</Button>
             <Button
